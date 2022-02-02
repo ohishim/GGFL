@@ -1,3 +1,3 @@
 
-exdata <- read.csv("data/exdata.csv")
-adj <- read.csv("data/adj.csv")
+exdata <- read.table("data/exdata.txt", header = T)
+adj <- read.table("data/adj.txt", header = T)
