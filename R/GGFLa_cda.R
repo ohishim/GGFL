@@ -200,7 +200,7 @@ GGFLa.cda <- function(
         Dj <- D[[j]]
         labj <- gr.labs[Dj]
 
-        Bj <- BETA.aft[Dj,]
+        Bj <- BETA.aft[Dj,,drop=F]
         wj <- W[[j]]
         rj <- r[j]
 
