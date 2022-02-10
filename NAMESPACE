@@ -2,4 +2,5 @@
 
 export(GGFL.cda)
 export(GGFLa.cda)
+importFrom(MASS,ginv)
 importFrom(magrittr,"%>%")

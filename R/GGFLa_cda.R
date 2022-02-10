@@ -3,12 +3,14 @@
 #'   This allows to use explanatory variables which are not took GGFL penalty.
 #'
 #' @importFrom magrittr %>%
+#' @importFrom MASS ginv
 #'
 #' @param yli list of group-wise vectors of an objective variable
 #' @param Xli list of group-wise matrixes of explanatory variables which are took GGFL penalty
 #' @param Zli list of group-wise matrixes of explanatory variables which are not took GGFL penalty
 #' @param D list of adjacency relations
 #' @param thres threshold for convergence judgement
+#' @param MPinv if TRUE, the ordinary least square estimator is calculated by the Moore–Penrose inverse matrix
 #' @param progress If TRUE, progress is displayed
 #' @param out.all if TRUE, results for all tuning parameters are output;
 #'   if FALSE, results for only the optimal tuning parameter are output
@@ -35,7 +37,10 @@
 #' @examples
 #' #GGFLa.cda(yli, Xli, Zli, D)
 
-GGFLa.cda <- function(yli, Xli, Zli, D, thres=1e-5, progress=FALSE, out.all=FALSE){
+GGFLa.cda <- function(
+  yli, Xli, Zli, D, thres=1e-5,
+  MPinv=FALSE, progress=FALSE, out.all=FALSE
+){
 
   ##############################################################################
   ###   preparation
@@ -83,9 +88,17 @@ GGFLa.cda <- function(yli, Xli, Zli, D, thres=1e-5, progress=FALSE, out.all=FALS
 
   Z.ZinvZ. <- Z.Zinv %*% Z.
 
-  X.XinvX.li <- lapply(1:m, function(j){
-    solve(X.Xli[[j]], tol=10^(-100)) %*% X.li[[j]]
-  })
+  if(MPinv)
+  {
+    X.XinvX.li <- lapply(1:m, function(j){
+      ginv(X.Xli[[j]]) %*% X.li[[j]]
+    })
+  } else
+  {
+    X.XinvX.li <- lapply(1:m, function(j){
+      solve(X.Xli[[j]], tol=10^(-100)) %*% X.li[[j]]
+    })
+  }
 
   BETA.aft <- BETA.max
   Gamma.aft <- Gamma.max

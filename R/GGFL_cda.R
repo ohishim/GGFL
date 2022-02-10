@@ -2,6 +2,7 @@
 #' @description \code{GGFL.cda} solving GGFL optimization problem via coordinate descent algorithm
 #'
 #' @importFrom magrittr %>%
+#' @importFrom MASS ginv
 #'
 #' @param yli list of group-wise vectors of an objective variable
 #' @param Xli list of group-wise matrixes of explanatory variables
@@ -11,6 +12,7 @@
 #' @param lambda.type option when is.null(lambda)=F
 #'   value: Lambda is searching points
 #'   rate: lam.max*Lambda is searching points
+#' @param MPinv if TRUE, the ordinary least square estimator is calculated by the Moore–Penrose inverse matrix
 #' @param progress If TRUE, progress is displayed
 #' @param out.all if TRUE, results for all tuning parameters are output;
 #'   if FALSE, results for only the optimal tuning parameter are output
@@ -39,7 +41,7 @@
 
 GGFL.cda <- function(
   yli, Xli, D, thres=1e-5, Lambda=NULL, lambda.type=NULL,
-  progress=FALSE, out.all=FALSE
+  MPinv=FALSE, progress=FALSE, out.all=FALSE
 ){
 
   ##############################################################################
@@ -61,7 +63,14 @@ GGFL.cda <- function(
   rm(Minv, X, X.)
 
   X.Xli <- lapply(Xli, function(A){t(A)%*%A})
-  X.Xinvli <- lapply(X.Xli, solve)
+
+  if(MPinv)
+  {
+    X.Xinvli <- lapply(X.Xli, ginv)
+  } else
+  {
+    X.Xinvli <- lapply(X.Xli, solve)
+  }
 
   r <- sapply(D, length)
   y <- unlist(yli)

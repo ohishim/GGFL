@@ -4,7 +4,16 @@
 \alias{GGFLa.cda}
 \title{Coordinate optimization for GGFL}
 \usage{
-GGFLa.cda(yli, Xli, Zli, D, thres = 1e-05, progress = FALSE, out.all = FALSE)
+GGFLa.cda(
+  yli,
+  Xli,
+  Zli,
+  D,
+  thres = 1e-05,
+  MPinv = FALSE,
+  progress = FALSE,
+  out.all = FALSE
+)
 }
 \arguments{
 \item{yli}{list of group-wise vectors of an objective variable}
@@ -16,6 +25,8 @@ GGFLa.cda(yli, Xli, Zli, D, thres = 1e-05, progress = FALSE, out.all = FALSE)
 \item{D}{list of adjacency relations}
 
 \item{thres}{threshold for convergence judgement}
+
+\item{MPinv}{if TRUE, the ordinary least square estimator is calculated by the Moore–Penrose inverse matrix}
 
 \item{progress}{If TRUE, progress is displayed}
 

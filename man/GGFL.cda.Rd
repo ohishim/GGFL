@@ -11,6 +11,7 @@ GGFL.cda(
   thres = 1e-05,
   Lambda = NULL,
   lambda.type = NULL,
+  MPinv = FALSE,
   progress = FALSE,
   out.all = FALSE
 )
@@ -29,6 +30,8 @@ GGFL.cda(
 \item{lambda.type}{option when is.null(lambda)=F
 value: Lambda is searching points
 rate: lam.max*Lambda is searching points}
+
+\item{MPinv}{if TRUE, the ordinary least square estimator is calculated by the Moore–Penrose inverse matrix}
 
 \item{progress}{If TRUE, progress is displayed}
 
