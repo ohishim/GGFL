@@ -10,6 +10,9 @@
 #' @param Zli list of group-wise matrixes of explanatory variables which are not took GGFL penalty
 #' @param D list of adjacency relations
 #' @param thres threshold for convergence judgement
+#' @param Lambda candidates of tuning parameter
+#'   if "default", the candidates are defined following the paper;
+#'   if "uniform", the candidates are defined by uniformly dividing
 #' @param MPinv if TRUE, the ordinary least square estimator is calculated by the Moore–Penrose inverse matrix
 #' @param progress If TRUE, progress is displayed
 #' @param out.all if TRUE, results for all tuning parameters are output;
@@ -38,7 +41,7 @@
 #' #GGFLa.cda(yli, Xli, Zli, D)
 
 GGFLa.cda <- function(
-  yli, Xli, Zli, D, thres=1e-5,
+  yli, Xli, Zli, D, thres=1e-5, Lambda="default",
   MPinv=FALSE, progress=FALSE, out.all=FALSE
 ){
 
@@ -147,12 +150,20 @@ GGFLa.cda <- function(
   ytli <- split(y - Z%*%Gamma.max, gr.idx)
 
   lam.max <- sapply(1:m, function(j){norm2(X.Xli[[j]]%*%Beta.max - X.li[[j]]%*%ytli[[j]]) / sum(W[[j]])}) %>% max
-  Lambda0 <- rev(lam.max * ((3/4)^((1:100)-1)))
 
-  lam.check <- sapply(Lambda0, function(lambda){
-    identical(all.equal(lambda, 0), TRUE)
-  })
-  Lambda <- Lambda0[!lam.check]
+  if(Lambda == "default")
+  {
+    Lambda0 <- rev(lam.max * ((3/4)^((1:100)-1)))
+
+    lam.check <- sapply(Lambda0, function(lambda){
+      identical(all.equal(lambda, 0), TRUE)
+    })
+    Lambda <- Lambda0[!lam.check]
+  } else if(Lambda == "uniform")
+  {
+    Lambda <- seq(0, lam.max, length=101)[-1]
+  }
+
   lam.n <- length(Lambda)
 
   rm(ytli)

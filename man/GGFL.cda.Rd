@@ -9,7 +9,7 @@ GGFL.cda(
   Xli,
   D,
   thres = 1e-05,
-  Lambda = NULL,
+  Lambda = "default",
   lambda.type = NULL,
   MPinv = FALSE,
   progress = FALSE,
@@ -25,11 +25,14 @@ GGFL.cda(
 
 \item{thres}{threshold for convergence judgement}
 
-\item{Lambda}{tuning parameter; "NULL" or vector/scalar}
+\item{Lambda}{candidates of tuning parameter
+if "default", the candidates are defined following the paper;
+if "uniform", the candidates are defined by uniformly dividing;
+if vector/scalar, the candidates are defined by following lambda.type}
 
-\item{lambda.type}{option when is.null(lambda)=F
-value: Lambda is searching points
-rate: lam.max*Lambda is searching points}
+\item{lambda.type}{option when Lambda is numeric;
+if "value", Lambda is searching points;
+if "rate", lam.max*Lambda is searching points}
 
 \item{MPinv}{if TRUE, the ordinary least square estimator is calculated by the Moore–Penrose inverse matrix}
 

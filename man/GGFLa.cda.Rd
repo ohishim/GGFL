@@ -10,6 +10,7 @@ GGFLa.cda(
   Zli,
   D,
   thres = 1e-05,
+  Lambda = "default",
   MPinv = FALSE,
   progress = FALSE,
   out.all = FALSE
@@ -25,6 +26,10 @@ GGFLa.cda(
 \item{D}{list of adjacency relations}
 
 \item{thres}{threshold for convergence judgement}
+
+\item{Lambda}{candidates of tuning parameter
+if "default", the candidates are defined following the paper;
+if "uniform", the candidates are defined by uniformly dividing}
 
 \item{MPinv}{if TRUE, the ordinary least square estimator is calculated by the Moore–Penrose inverse matrix}
 

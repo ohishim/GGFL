@@ -8,10 +8,13 @@
 #' @param Xli list of group-wise matrixes of explanatory variables
 #' @param D list of adjacency relations
 #' @param thres threshold for convergence judgement
-#' @param Lambda tuning parameter; "NULL" or vector/scalar
-#' @param lambda.type option when is.null(lambda)=F
-#'   value: Lambda is searching points
-#'   rate: lam.max*Lambda is searching points
+#' @param Lambda candidates of tuning parameter
+#'   if "default", the candidates are defined following the paper;
+#'   if "uniform", the candidates are defined by uniformly dividing;
+#'   if vector/scalar, the candidates are defined by following lambda.type
+#' @param lambda.type option when Lambda is numeric;
+#'   if "value", Lambda is searching points;
+#'   if "rate", lam.max*Lambda is searching points
 #' @param MPinv if TRUE, the ordinary least square estimator is calculated by the Moore–Penrose inverse matrix
 #' @param progress If TRUE, progress is displayed
 #' @param out.all if TRUE, results for all tuning parameters are output;
@@ -40,7 +43,7 @@
 #' #GGFL.cda(yli, Xli, D)
 
 GGFL.cda <- function(
-  yli, Xli, D, thres=1e-5, Lambda=NULL, lambda.type=NULL,
+  yli, Xli, D, thres=1e-5, Lambda="default", lambda.type=NULL,
   MPinv=FALSE, progress=FALSE, out.all=FALSE
 ){
 
@@ -89,10 +92,17 @@ GGFL.cda <- function(
     return(out)
   })
 
-  if(is.null(Lambda))
+  if(is.character(Lambda))
   {
     lam.max <- sapply(1:m, function(j){norm2(X.Xli[[j]]%*%Beta.max - X.y[[j]]) / sum(W[[j]])}) %>% max
-    Lambda <- rev(lam.max * ((3/4)^((1:100)-1)))
+
+    if(Lambda == "default")
+    {
+      Lambda <- rev(lam.max * ((3/4)^((1:100)-1)))
+    } else if(Lambda == "uniform")
+    {
+      Lambda <- seq(0, lam.max, length=101)[-1]
+    }
   } else if(is.null(lambda.type))
   {
     stop("Please select lambda.type")
