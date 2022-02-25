@@ -51,9 +51,10 @@ exdata <- data.frame(
   y = y,
   X,
   area = area
-)
+)[sample(1:n, n),]
+rownames(exdata) <- NULL
 
 usethis::use_data(exdata, overwrite = TRUE)
 
-adj <- read.table("inst/adj.txt", header = T)
-usethis::use_data(adj, overwrite = TRUE)
+# adj <- read.table("inst/adj.txt", header = T)
+# usethis::use_data(adj, overwrite = TRUE)

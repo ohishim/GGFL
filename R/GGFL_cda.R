@@ -4,9 +4,11 @@
 #' @importFrom magrittr %>%
 #' @importFrom MASS ginv
 #'
-#' @param yli list of group-wise vectors of an objective variable
-#' @param Xli list of group-wise matrixes of explanatory variables
-#' @param D list of adjacency relations
+#' @param y vector of an objective variable
+#' @param X matrix of explanatory variables without intercept
+#' @param area vector of area labels for each individual
+#' @param adj dataframe of adjacent information of which
+#'   the labels for the first and second column are respectively "area" and "adj"
 #' @param thres threshold for convergence judgement
 #' @param Lambda candidates of tuning parameter
 #'   if "default", the candidates are defined following the paper;
@@ -15,12 +17,13 @@
 #' @param lambda.type option when Lambda is numeric;
 #'   if "value", Lambda is searching points;
 #'   if "rate", lam.max*Lambda is searching points
+#' @param standardize if TRUE, y and X are standardized in the sense of norm
 #' @param MPinv if TRUE, the ordinary least square estimator is calculated by the Moore–Penrose inverse matrix
 #' @param progress If TRUE, progress is displayed
 #' @param out.all if TRUE, results for all tuning parameters are output;
 #'   if FALSE, results for only the optimal tuning parameter are output
 #'
-#' @return coef: list of GGFL estimates
+#' @return Coef: list of GGFL estimates
 #' @return rss: vector or scalar of residual sum of squares
 #' @return df: vector or scalar of degrees of freedom
 #' @return msc: vector or scalar of values of model selection criterion
@@ -40,18 +43,40 @@
 #'
 #' @export
 #' @examples
-#' #GGFL.cda(yli, Xli, D)
+#' #GGFL.cda(y, X, area, adj)
 
 GGFL.cda <- function(
-  yli, Xli, D, thres=1e-5, Lambda="default", lambda.type=NULL,
-  MPinv=FALSE, progress=FALSE, out.all=FALSE
+  y, X, area, adj, thres=1e-5, Lambda="default", lambda.type=NULL,
+  standardize=TRUE, MPinv=FALSE, progress=FALSE, out.all=FALSE
 ){
 
   ##############################################################################
   ###   preparations
   ##############################################################################
 
+  t1 <- proc.time()[3]
+
   norm2 <- function(x){sqrt(sum(x^2))}
+
+  if(standardize)
+  {
+    y0 <- y
+    normy <- norm2(y)
+    y <- y0 / normy
+    yli <- split(y, area)
+
+    X0 <- X
+    normX <- c(1, apply(X0, 2, norm2))
+    X <- apply(X0, 2, function(x){x / norm2(x)}) %>% cbind(1, .)
+    Xli <- as.data.frame(X) %>% split(area) %>% lapply(data.matrix)
+  } else
+  {
+    yli <- split(y, area)
+    Xli <- cbind(1, X) %>% as.data.frame %>% split(area) %>% lapply(data.matrix)
+  }
+
+  area1 <- unique(area) %>% sort
+  D <- split(adj$adj, adj$area) %>% lapply(function(x){which(area1 %in% x)})
 
   n <- sapply(yli, length) %>% sum
   k <- Xli[[1]] %>% ncol
@@ -76,7 +101,6 @@ GGFL.cda <- function(
   }
 
   r <- sapply(D, length)
-  y <- unlist(yli)
 
   X.y <- lapply(1:m, function(j){t(Xli[[j]]) %*% yli[[j]] %>% drop})
 
@@ -131,7 +155,6 @@ GGFL.cda <- function(
   BETAs <- Gr.labs <- list()
   RSS <- DF <- MSC <- R2 <- MER <- numeric(lam.n)
 
-  t1 <- proc.time()[3]
   for(lam.i in 1:lam.n)
   {
     lambda <- Lambda[lam.i]
@@ -285,10 +308,40 @@ GGFL.cda <- function(
   } #end for lam.i
   t2 <- proc.time()[3]
 
+  opt <- which.min(MSC)
+  BETA.hat <- BETAs[[opt]]
+  pred <- lapply(1:m, function(j){Xli[[j]] %*% BETA.hat[j,] %>% drop}) %>% unlist
+  pred.lse <- lapply(1:m, function(j){Xli[[j]] %*% BETA.LSE[j,] %>% drop}) %>% unlist
+  pred.max <- lapply(1:m, function(j){Xli[[j]] %*% BETA.max[j,] %>% drop}) %>% unlist
+
+  if(standardize)
+  {
+    BETA.hat <- normy * BETA.hat / matrix(normX, m, k, byrow=T)
+    BETA.LSE <- normy * BETA.LSE / matrix(normX, m, k, byrow=T)
+    BETA.max <- matrix(normy * Beta.max / normX, m, k, byrow=T)
+
+    pred <- pred * normy
+    pred.lse <- pred.lse * normy
+    pred.max <- pred.max * normy
+  }
+
   if(out.all)
   {
+    if(standardize)
+    {
+      BETAs <- lapply(BETAs, function(BETA){
+        normy * BETA / matrix(normX, m, k, byrow=T)
+      })
+    }
+
     out <- list(
-      coef = BETAs,
+      coef.opt = BETA.hat,
+      coef.lse = BETA.LSE,
+      coef.max = BETA.max,
+      pred = pred,
+      pred.lse = pred.lse,
+      pred.max = pred.max,
+      Coef = BETAs,
       rss = RSS,
       df = DF,
       msc = MSC,
@@ -301,16 +354,13 @@ GGFL.cda <- function(
     )
   } else
   {
-    opt <- which.min(MSC)
-    BETA.hat <- BETAs[[opt]]
-
     out <- list(
-      coef.opt= BETA.hat,
-      coef.lse=BETA.LSE,
-      coef.max=BETA.max,
-      pred = (lapply(1:m, function(j){Xli[[j]] %*% BETA.hat[j,] %>% drop}) %>% unlist),
-      pred.lse = (lapply(1:m, function(j){Xli[[j]] %*% BETA.LSE[j,] %>% drop}) %>% unlist),
-      pred.max = (lapply(1:m, function(j){Xli[[j]] %*% BETA.max[j,] %>% drop}) %>% unlist),
+      coef.opt = BETA.hat,
+      coef.lse = BETA.LSE,
+      coef.max = BETA.max,
+      pred = pred,
+      pred.lse = pred.lse,
+      pred.max = pred.max,
       rss = RSS[opt],
       df = DF[opt],
       msc = MSC[opt],

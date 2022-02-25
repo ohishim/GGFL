@@ -5,23 +5,28 @@
 \title{Coordinate optimization for GGFL}
 \usage{
 GGFL.cda(
-  yli,
-  Xli,
-  D,
+  y,
+  X,
+  area,
+  adj,
   thres = 1e-05,
   Lambda = "default",
   lambda.type = NULL,
+  standardize = TRUE,
   MPinv = FALSE,
   progress = FALSE,
   out.all = FALSE
 )
 }
 \arguments{
-\item{yli}{list of group-wise vectors of an objective variable}
+\item{y}{vector of an objective variable}
 
-\item{Xli}{list of group-wise matrixes of explanatory variables}
+\item{X}{matrix of explanatory variables without intercept}
 
-\item{D}{list of adjacency relations}
+\item{area}{vector of area labels for each individual}
+
+\item{adj}{dataframe of adjacent information of which
+the labels for the first and second column are respectively "area" and "adj"}
 
 \item{thres}{threshold for convergence judgement}
 
@@ -34,6 +39,8 @@ if vector/scalar, the candidates are defined by following lambda.type}
 if "value", Lambda is searching points;
 if "rate", lam.max*Lambda is searching points}
 
+\item{standardize}{if TRUE, y and X are standardized in the sense of norm}
+
 \item{MPinv}{if TRUE, the ordinary least square estimator is calculated by the Moore–Penrose inverse matrix}
 
 \item{progress}{If TRUE, progress is displayed}
@@ -42,7 +49,7 @@ if "rate", lam.max*Lambda is searching points}
 if FALSE, results for only the optimal tuning parameter are output}
 }
 \value{
-coef: list of GGFL estimates
+Coef: list of GGFL estimates
 
 rss: vector or scalar of residual sum of squares
 
@@ -78,5 +85,5 @@ pred.max: vecter of predictive values for coef.max
 \code{GGFL.cda} solving GGFL optimization problem via coordinate descent algorithm
 }
 \examples{
-#GGFL.cda(yli, Xli, D)
+#GGFL.cda(y, X, area, adj)
 }
