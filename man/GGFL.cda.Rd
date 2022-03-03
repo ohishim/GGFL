@@ -49,6 +49,8 @@ if "rate", lam.max*Lambda is searching points}
 if FALSE, results for only the optimal tuning parameter are output}
 }
 \value{
+idx: the index of the optimal tuning parameter
+
 Coef: list of GGFL estimates
 
 rss: vector or scalar of residual sum of squares

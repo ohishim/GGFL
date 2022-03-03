@@ -23,6 +23,7 @@
 #' @param out.all if TRUE, results for all tuning parameters are output;
 #'   if FALSE, results for only the optimal tuning parameter are output
 #'
+#' @return idx: the index of the optimal tuning parameter
 #' @return Coef: list of GGFL estimates
 #' @return rss: vector or scalar of residual sum of squares
 #' @return df: vector or scalar of degrees of freedom
@@ -294,7 +295,7 @@ GGFL.cda <- function(
     } #end while dif
 
     BETAs[[lam.i]] <- BETA.aft
-    Gr.labs[[lam.i]] <- gr.labs
+    Gr.labs[[lam.i]] <- match(gr.labs, unique(gr.labs))
 
     yli.hat <- lapply(1:m, function(j){Xli[[j]] %*% BETA.aft[j,] %>% drop})
     RSS[lam.i] <- rss <- (sapply(1:m, function(j){sum((yli[[j]] - yli.hat[[j]])^2)}) %>% sum) / n
@@ -335,6 +336,7 @@ GGFL.cda <- function(
     }
 
     out <- list(
+      idx = opt,
       coef.opt = BETA.hat,
       coef.lse = BETA.LSE,
       coef.max = BETA.max,
