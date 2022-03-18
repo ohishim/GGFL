@@ -1,5 +1,5 @@
 #' @title Coordinate optimization for GGFL
-#' @description \code{GGFLa.cda} More general version of Coordinate optimization for GGFL.
+#' @description \code{GGFLa} More general version of Coordinate optimization for GGFL.
 #'   This allows to use explanatory variables which are not took GGFL penalty.
 #'
 #' @importFrom magrittr %>%
@@ -9,7 +9,7 @@
 #' @param Xli list of group-wise matrixes of explanatory variables which are took GGFL penalty
 #' @param Zli list of group-wise matrixes of explanatory variables which are not took GGFL penalty
 #' @param D list of adjacency relations
-#' @param thres threshold for convergence judgement
+#' @param tol tolerance for convergence
 #' @param Lambda candidates of tuning parameter
 #'   if "default", the candidates are defined following the paper;
 #'   if "uniform", the candidates are defined by uniformly dividing
@@ -38,10 +38,10 @@
 #'
 #' @export
 #' @examples
-#' #GGFLa.cda(yli, Xli, Zli, D)
+#' #GGFLa(yli, Xli, Zli, D)
 
-GGFLa.cda <- function(
-  yli, Xli, Zli, D, thres=1e-5, Lambda="default",
+GGFLa <- function(
+  yli, Xli, Zli, D, tol=1e-5, Lambda="default",
   MPinv=FALSE, progress=FALSE, out.all=FALSE
 ){
 
@@ -108,7 +108,7 @@ GGFLa.cda <- function(
   dif <- 1
   iter <- 0
 
-  while(dif > thres)
+  while(dif > tol)
   {
     iter <- iter + 1
 
@@ -187,7 +187,7 @@ GGFLa.cda <- function(
 
     dif <- 1
     iter <- 0
-    while(dif > thres)
+    while(dif > tol)
     {
       iter <- iter + 1
       BETA.bef <- BETA.aft
@@ -225,7 +225,7 @@ GGFLa.cda <- function(
           labj <- sapply(idxj, function(x){labj[x[1]]})
         }
 
-        resj <- GGFL.cda1(X.Xli[[j]], X.yt[[j]], 2*lambda*wj, Bj, BETA.aft[j,])
+        resj <- GGFL1(X.Xli[[j]], X.yt[[j]], 2*lambda*wj, Bj, BETA.aft[j,])
         BETA.aft[j,] <- resj$solution
 
         if(resj$type == "join")
@@ -299,7 +299,7 @@ GGFLa.cda <- function(
             labl <- sapply(idxl, function(x){labl[x[1]]})
           }
 
-          resl <- GGFL.cda1(
+          resl <- GGFL1(
             X.Xli[El] %>% Reduce("+", .),
             X.yt[El] %>% Reduce("+", .),
             2*lambda*w1,

@@ -1,5 +1,5 @@
 #' @title Sub-function for GGFL
-#' @description \code{GGFL.cda1} This is required to execute "GGFL.cda" or "GGFLa.cda"
+#' @description \code{GGFL1} This is required to execute "GGFL" or "GGFLa"
 #'
 #' @importFrom magrittr %>%
 #'
@@ -8,16 +8,16 @@
 #' @param Lambda r-dimensional vector which all elements are positive
 #' @param B r × k matrix
 #' @param Beta0 k-dimensional initial vector
-#' @param thres threshold for convergence judgement
+#' @param tol tolerance for convergence
 #'
 #' @return solution: vector of the minimizer
 #' @return type: "join" or "disjoin"
 #' @return idx: index of parameter when type=join
 #'
 #' @examples
-#' #GGFL.cda1(M, c, Lambda, B, Beta0)
+#' #GGFL1(M, c, Lambda, B, Beta0)
 
-GGFL.cda1 <- function(M, c, Lambda, B, Beta0, thres=1e-5){
+GGFL1 <- function(M, c, Lambda, B, Beta0, tol=1e-5){
 
   type <- "-"
 
@@ -64,7 +64,7 @@ GGFL.cda1 <- function(M, c, Lambda, B, Beta0, thres=1e-5){
       type <- "disjoin"
     } else if(length(check) > 1)
     {
-      stop("The error 1 occurs in GGFL.cda1")
+      stop("The error 1 occurs in GGFL1")
     }
 
     k <- length(Beta0)
@@ -85,7 +85,7 @@ GGFL.cda1 <- function(M, c, Lambda, B, Beta0, thres=1e-5){
     dif <- 1
     iter <- 0
 
-    while(dif > thres)
+    while(dif > tol)
     {
       iter <- iter + 1
 
@@ -99,7 +99,7 @@ GGFL.cda1 <- function(M, c, Lambda, B, Beta0, thres=1e-5){
 
   } else
   {
-    stop("The error 2 occurs in GGFL.cda1")
+    stop("The error 2 occurs in GGFL1")
   }
 
   return(

@@ -1,5 +1,5 @@
 #' @title Coordinate optimization for GGFL
-#' @description \code{GGFL.cda} solving GGFL optimization problem via coordinate descent algorithm
+#' @description \code{GGFL} solving GGFL optimization problem via coordinate descent algorithm
 #'
 #' @importFrom magrittr %>%
 #' @importFrom MASS ginv
@@ -9,7 +9,6 @@
 #' @param area vector of area labels for each individual
 #' @param adj dataframe of adjacent information of which
 #'   the labels for the first and second column are respectively "area" and "adj"
-#' @param thres threshold for convergence judgement
 #' @param Lambda candidates of tuning parameter
 #'   if "default", the candidates are defined following the paper;
 #'   if "uniform", the candidates are defined by uniformly dividing;
@@ -17,8 +16,11 @@
 #' @param lambda.type option when Lambda is numeric;
 #'   if "value", Lambda is searching points;
 #'   if "rate", lam.max*Lambda is searching points
+#' @param adaptive option only when weight=NULL; if true, adaptive penalty is adopted
+#' @param weight list of penalty weight (default is TRUE)
 #' @param standardize if TRUE, y and X are standardized in the sense of norm
 #' @param MPinv if TRUE, the ordinary least square estimator is calculated by the Moore–Penrose inverse matrix
+#' @param tol tolerance for convergence
 #' @param progress If TRUE, progress is displayed
 #' @param out.all if TRUE, results for all tuning parameters are output;
 #'   if FALSE, results for only the optimal tuning parameter are output
@@ -44,11 +46,11 @@
 #'
 #' @export
 #' @examples
-#' #GGFL.cda(y, X, area, adj)
+#' #GGFL(y, X, area, adj)
 
-GGFL.cda <- function(
-  y, X, area, adj, thres=1e-5, Lambda="default", lambda.type=NULL,
-  standardize=TRUE, MPinv=FALSE, progress=FALSE, out.all=FALSE
+GGFL <- function(
+  y, X, area, adj, Lambda="default", lambda.type=NULL, adaptive=TRUE, weight=NULL,
+  standardize=TRUE, MPinv=FALSE, tol=1e-5, progress=FALSE, out.all=FALSE
 ){
 
   ##############################################################################
@@ -111,11 +113,24 @@ GGFL.cda <- function(
 
   rm(MinvX., X.Xinvli)
 
-  W <- lapply(1:m, function(j){
-    Betaj <- BETA.LSE[j,]
-    out <- sapply(D[[j]], function(l){1 / norm2(Betaj - BETA.LSE[l,])})
-    return(out)
-  })
+  if(is.null(weight))
+  {
+    if(adaptive)
+    {
+      W <- lapply(1:m, function(j){
+        Betaj <- BETA.LSE[j,]
+        out <- sapply(D[[j]], function(l){1 / norm2(Betaj - BETA.LSE[l,])})
+        return(out)
+      })
+    } else
+    {
+      W <- lapply(r, function(x){rep(1, x)})
+    }
+  } else
+  {
+    W <- weight
+    rm(weight)
+  }
 
   if(is.character(Lambda))
   {
@@ -162,7 +177,7 @@ GGFL.cda <- function(
 
     dif <- 1
     iter <- 0
-    while(dif > thres)
+    while(dif > tol)
     {
       iter <- iter + 1
       BETA.bef <- BETA.aft
@@ -190,7 +205,7 @@ GGFL.cda <- function(
           labj <- sapply(idxj, function(x){labj[x[1]]})
         }
 
-        resj <- GGFL.cda1(X.Xli[[j]], X.y[[j]], 2*lambda*wj, Bj, BETA.aft[j,])
+        resj <- GGFL1(X.Xli[[j]], X.y[[j]], 2*lambda*wj, Bj, BETA.aft[j,])
         BETA.aft[j,] <- resj$solution
 
         if(resj$type == "join")
@@ -264,7 +279,7 @@ GGFL.cda <- function(
             labl <- sapply(idxl, function(x){labl[x[1]]})
           }
 
-          resl <- GGFL.cda1(
+          resl <- GGFL1(
             X.Xli[El] %>% Reduce("+", .),
             X.y[El] %>% Reduce("+", .),
             2*lambda*w1,
