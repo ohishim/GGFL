@@ -21,6 +21,7 @@
 #' @param standardize if TRUE, y and X are standardized in the sense of norm
 #' @param MPinv if TRUE, the ordinary least square estimator is calculated by the Moore–Penrose inverse matrix
 #' @param tol tolerance for convergence
+#' @param maxit iteration limit
 #' @param progress If TRUE, progress is displayed
 #' @param out.all if TRUE, results for all tuning parameters are output;
 #'   if FALSE, results for only the optimal tuning parameter are output
@@ -50,7 +51,7 @@
 
 GGFL <- function(
   y, X, area, adj, Lambda="default", lambda.type=NULL, adaptive=TRUE, weight=NULL,
-  standardize=TRUE, MPinv=FALSE, tol=1e-5, progress=FALSE, out.all=FALSE
+  standardize=TRUE, MPinv=FALSE, tol=1e-5, maxit=500, progress=FALSE, out.all=FALSE
 ){
 
   ##############################################################################
@@ -177,7 +178,7 @@ GGFL <- function(
 
     dif <- 1
     iter <- 0
-    while(dif > tol)
+    while((dif > tol) & (iter < maxit))
     {
       iter <- iter + 1
       BETA.bef <- BETA.aft

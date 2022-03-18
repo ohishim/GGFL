@@ -16,6 +16,7 @@ GGFL(
   standardize = TRUE,
   MPinv = FALSE,
   tol = 1e-05,
+  maxit = 500,
   progress = FALSE,
   out.all = FALSE
 )
@@ -48,6 +49,8 @@ if "rate", lam.max*Lambda is searching points}
 \item{MPinv}{if TRUE, the ordinary least square estimator is calculated by the Moore–Penrose inverse matrix}
 
 \item{tol}{tolerance for convergence}
+
+\item{maxit}{iteration limit}
 
 \item{progress}{If TRUE, progress is displayed}
 
