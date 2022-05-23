@@ -1,6 +1,6 @@
 #' @title Coordinate optimization for GGFL
-#' @description \code{GGFLa} More general version of Coordinate optimization for GGFL.
-#'   This allows to use explanatory variables which are not took GGFL penalty.
+#' @description \code{pGGFL} More general version of Coordinate optimization for GGFL.
+#'   Only partial explanatory variables are penalized.
 #'
 #' @importFrom magrittr %>%
 #' @importFrom MASS ginv
@@ -11,37 +11,62 @@
 #' @param D list of adjacency relations
 #' @param tol tolerance for convergence
 #' @param Lambda candidates of tuning parameter
-#'   if "default", the candidates are defined following the paper;
-#'   if "uniform", the candidates are defined by uniformly dividing
-#' @param MPinv if TRUE, the ordinary least square estimator is calculated by the Moore–Penrose inverse matrix
-#' @param progress If TRUE, progress is displayed
-#' @param out.all if TRUE, results for all tuning parameters are output;
-#'   if FALSE, results for only the optimal tuning parameter are output
+#'   if `"default"`, the candidates are defined following the paper;
+#'   if `"uniform"`, the candidates are defined by uniformly dividing
+#' @param alpha a value expressing penalty strength for EGCV criterion;
+#'   default is `NULL` which corresponds to `log(n)`
+#' @param MPinv if TRUE, the ordinary least squares estimator is calculated by the Moore-Penrose inverse matrix
+#' @param progress If `TRUE`, progress is displayed
+#' @param out.all if `TRUE`, results for all tuning parameters are output;
+#'   if `FALSE`, results for only the optimal tuning parameter are output
 #'
-#' @return coef: list of GGFL estimates
-#' @return rss: vector or scalar of residual sum of squares
-#' @return df: vector or scalar of degrees of freedom
-#' @return msc: vector or scalar of values of model selection criterion
-#' @return r2: vector or scalar of coefficient of determination
-#' @return mer: vector or scalar of median error rate
-#' @return lambda: vector or scalar of tuning parameters
-#' @return weight: list of penalty weight
-#' @return gr.labs: list of labels for groups
-#' @return time: runtime (s)
+#' @return a list object which has the following elements:
+#' \item{coef1}{list of GGFL estimates for penalized variables}
 #'
-#' @return coef.opt: matrix of GGFL estimates
-#' @return coef.lse: matrix of OLS estimates
-#' @return coef.max: matrix of estimates when all groups are equal
-#' @return pred: vecter of predictive values for coef.opt
-#' @return pred.lse: vecter of predictive values for coef.lse
-#' @return pred.max: vecter of predictive values for coef.max
+#' \item{coef2}{list of GGFL estimates for non-penalized variables}
+#'
+#' \item{rss}{vector or scalar of residual sum of squares}
+#'
+#' \item{df}{vector or scalar of degrees of freedom}
+#'
+#' \item{msc}{vector or scalar of values of model selection criterion}
+#'
+#' \item{r2}{vector or scalar of coefficient of determination}
+#'
+#' \item{mer}{vector or scalar of median error rate}
+#'
+#' \item{lambda}{vector or scalar of tuning parameters}
+#'
+#' \item{weight}{list of penalty weight}
+#'
+#' \item{gr.labs}{list of labels for groups}
+#'
+#' \item{time}{runtime (s)}
+#'
+#' \item{coef1GGFL}{matrix of GGFL estimates for penalized variables}
+#'
+#' \item{coef1OLS}{matrix of OLS estimates for penalized variables}
+#'
+#' \item{coef1MAX}{matrix of estimates for penalized variables when all groups are equal}
+#'
+#' \item{coef2GGFL}{matrix of GGFL estimates for non-penalized variables}
+#'
+#' \item{coef2OLS}{matrix of OLS estimates for non-penalized variables}
+#'
+#' \item{coef2MAX}{matrix of estimates for non-penalized variables when all groups are equal}
+#'
+#' \item{fitGGFL}{vector of fitted values for `coef1GGFL` and `coef2GGFL`}
+#'
+#' \item{fitOLS}{vector of fitted values for `coef1OLS` and `coef2OLS`}
+#'
+#' \item{fitMAX}{vector of fitted values for `coef1MAX` and `coef2MAX`}
 #'
 #' @export
 #' @examples
-#' #GGFLa(yli, Xli, Zli, D)
+#' #pGGFL(yli, Xli, Zli, D)
 
-GGFLa <- function(
-  yli, Xli, Zli, D, tol=1e-5, Lambda="default",
+pGGFL <- function(
+  yli, Xli, Zli, D, tol=1e-5, Lambda="default", alpha=NULL,
   MPinv=FALSE, progress=FALSE, out.all=FALSE
 ){
 
@@ -69,7 +94,7 @@ GGFLa <- function(
   ns <- sapply(yli, length)
   gr.idx <- mapply(rep, 1:m, ns) %>% unlist
 
-  alpha <- log(n)
+  if(is.null(alpha)){alpha <- log(n)}
   s.t <- sum((y-mean(y))^2)/n
 
   #=============================================================================
@@ -379,17 +404,17 @@ GGFLa <- function(
     Gamma.hat <- GAMMAs[opt,]
 
     out <- list(
-      coef1.opt= BETA.hat,
-      coef1.lse=BETA.LSE,
-      coef1.max=BETA.max,
-      coef2.opt=Gamma.hat,
-      coef2.lse=Gamma.LSE,
-      coef2.max=Gamma.max,
-      pred = (lapply(1:m, function(j){Xli[[j]] %*% BETA.hat[j,] %>% drop}) %>% unlist) +
+      coef1GGFL=BETA.hat,
+      coef1OLS=BETA.LSE,
+      coef1MAX=BETA.max,
+      coef2GGFL=Gamma.hat,
+      coef2OLS=Gamma.LSE,
+      coef2MAX=Gamma.max,
+      fitGGFL = (lapply(1:m, function(j){Xli[[j]] %*% BETA.hat[j,] %>% drop}) %>% unlist) +
         Z %*% Gamma.hat,
-      pred.lse = (lapply(1:m, function(j){Xli[[j]] %*% BETA.LSE[j,] %>% drop}) %>% unlist) +
+      fitOLS = (lapply(1:m, function(j){Xli[[j]] %*% BETA.LSE[j,] %>% drop}) %>% unlist) +
         Z %*% Gamma.LSE,
-      pred.max = (lapply(1:m, function(j){Xli[[j]] %*% BETA.max[j,] %>% drop}) %>% unlist) +
+      fitMAX = (lapply(1:m, function(j){Xli[[j]] %*% BETA.max[j,] %>% drop}) %>% unlist) +
         Z %*% Gamma.max,
       rss = RSS[opt],
       df = DF[opt],

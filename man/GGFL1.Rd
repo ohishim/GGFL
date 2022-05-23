@@ -7,24 +7,25 @@
 GGFL1(M, c, Lambda, B, Beta0, tol = 1e-05)
 }
 \arguments{
-\item{M}{k × k positive definite matrix}
+\item{M}{k * k positive definite matrix}
 
 \item{c}{k-dimensional vector}
 
 \item{Lambda}{r-dimensional vector which all elements are positive}
 
-\item{B}{r × k matrix}
+\item{B}{r * k matrix}
 
 \item{Beta0}{k-dimensional initial vector}
 
 \item{tol}{tolerance for convergence}
 }
 \value{
-solution: vector of the minimizer
+a list object which has the following elements:
+\item{solution}{vector of the minimizer}
 
-type: "join" or "disjoin"
+\item{type}{\code{"join"} or \code{"disjoin"}}
 
-idx: index of parameter when type=join
+\item{idx}{index of parameter when \code{type=join}}
 }
 \description{
 \code{GGFL1} This is required to execute "GGFL" or "GGFLa"

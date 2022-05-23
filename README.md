@@ -46,14 +46,14 @@ res <- GGFL(y, X, area, adj1)
 ```
 In default, `y` and all column vectors of `X` are standardized in the sense of norm.
 If you do not want to do it, you can use the option `standardize = FALSE`.
-If you want to have the estimates and predictive values, you can respectively obtain as `res$coef.opt` and `res$pred`.
+If you want to have the estimates and fitted values, you can respectively obtain as `res$coefGGFL` and `res$fitGGFL`.
 Here, these results are for the tuning parameter optimized by EGCV criterion. 
 To obtain results for all candidates of tuning parameter, you can use the option `out.all = TRUE`.
 
 ## Example 2
 
 In the above example, all variables are penalized.
-When only partial variables are penalized, you can use `GGFLa` instead of `GGFL`, like this:
+When only partial variables are penalized, you can use `pGGFL` instead of `GGFL`, like this:
 ``` r
 y <- exdata$y
 X <- select(exdata, X1:X15) %>% cbind(X0=1, .)  #variables for penalized estimation
@@ -65,7 +65,7 @@ Xli <- lapply(split(X, area), data.matrix)
 Zli <- lapply(split(Z, area), data.matrix)
 D <- split(adj$adjNO, adj$areaNO)
 
-res <- GGFLa(yli, Xli, Zli, D)
+res <- pGGFL(yli, Xli, Zli, D)
 ```
 
 

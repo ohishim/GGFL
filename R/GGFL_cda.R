@@ -3,6 +3,7 @@
 #'
 #' @importFrom magrittr %>%
 #' @importFrom MASS ginv
+#' @importFrom stats median
 #'
 #' @param y vector of an objective variable
 #' @param X matrix of explanatory variables without intercept
@@ -10,47 +11,66 @@
 #' @param adj dataframe of adjacent information of which
 #'   the labels for the first and second column are respectively "area" and "adj"
 #' @param Lambda candidates of tuning parameter
-#'   if "default", the candidates are defined following the paper;
-#'   if "uniform", the candidates are defined by uniformly dividing;
-#'   if vector/scalar, the candidates are defined by following lambda.type
-#' @param lambda.type option when Lambda is numeric;
-#'   if "value", Lambda is searching points;
-#'   if "rate", lam.max*Lambda is searching points
-#' @param adaptive option only when weight=NULL; if true, adaptive penalty is adopted
-#' @param weight list of penalty weight (default is TRUE)
-#' @param standardize if TRUE, y and X are standardized in the sense of norm
-#' @param MPinv if TRUE, the ordinary least square estimator is calculated by the Moore–Penrose inverse matrix
+#'   if `"default"`, the candidates are defined following the paper;
+#'   if `"uniform"`, the candidates are defined by uniformly dividing;
+#'   if vector/scalar, the candidates are defined by following `lambda.type`
+#' @param lambda.type option when `Lambda` is numeric;
+#'   if "value", `Lambda` is searching points;
+#'   if "rate", `lam.max*Lambda` is searching points
+#' @param adaptive option only when `weight=NULL`; if `TRUE`, adaptive penalty is adopted
+#' @param weight list of penalty weight (default is `NULL`)
+#' @param alpha a value expressing penalty strength for EGCV criterion;
+#'   default is `NULL` which corresponds to `log(n)`
+#' @param standardize if `TRUE`, `y` and `X` are standardized in the sense of norm
+#' @param MPinv if `TRUE`, the ordinary least squares estimator is calculated by the Moore-Penrose inverse matrix
 #' @param tol tolerance for convergence
 #' @param maxit iteration limit
-#' @param progress If TRUE, progress is displayed
-#' @param out.all if TRUE, results for all tuning parameters are output;
-#'   if FALSE, results for only the optimal tuning parameter are output
+#' @param progress If `TRUE`, progress is displayed
+#' @param out.all if `TRUE`, results for all tuning parameters are output;
+#'   if `FALSE`, results for only the optimal tuning parameter are output
 #'
-#' @return idx: the index of the optimal tuning parameter
-#' @return Coef: list of GGFL estimates
-#' @return rss: vector or scalar of residual sum of squares
-#' @return df: vector or scalar of degrees of freedom
-#' @return msc: vector or scalar of values of model selection criterion
-#' @return r2: vector or scalar of coefficient of determination
-#' @return mer: vector or scalar of median error rate
-#' @return lambda: vector or scalar of tuning parameters
-#' @return weight: list of penalty weight
-#' @return gr.labs: list of labels for groups
-#' @return time: runtime (s)
+#' @return a list object which has the following elements:
+#' \item{idx}{the index of the optimal tuning parameter}
 #'
-#' @return coef.opt: matrix of GGFL estimates
-#' @return coef.lse: matrix of OLS estimates
-#' @return coef.max: matrix of estimates when all groups are equal
-#' @return pred: vecter of predictive values for coef.opt
-#' @return pred.lse: vecter of predictive values for coef.lse
-#' @return pred.max: vecter of predictive values for coef.max
+#' \item{Coef}{list of GGFL estimates}
+#'
+#' \item{rss}{vector or scalar of residual sum of squares}
+#'
+#' \item{df}{vector or scalar of degrees of freedom}
+#'
+#' \item{msc}{vector or scalar of values of EGCV criterion}
+#'
+#' \item{r2}{vector or scalar of coefficient of determination}
+#'
+#' \item{mer}{vector or scalar of median error rate}
+#'
+#' \item{lambda}{vector or scalar of tuning parameters}
+#'
+#' \item{weight}{list of penalty weight}
+#'
+#' \item{gr.labs}{list of labels for groups}
+#'
+#' \item{time}{runtime (s)}
+#'
+#'
+#' \item{coefGGFL}{matrix of GGFL estimates}
+#'
+#' \item{coefOLS}{matrix of OLS estimates}
+#'
+#' \item{coefMAX}{matrix of estimates when all groups are equal}
+#'
+#' \item{fitGGFL}{vecter of fitted values for `coefGGFL`}
+#'
+#' \item{fitOLS}{vecter of fitted values for `coefOLS`}
+#'
+#' \item{fitMAX}{vecter of fitted values for `coefMAX`}
 #'
 #' @export
 #' @examples
 #' #GGFL(y, X, area, adj)
 
 GGFL <- function(
-  y, X, area, adj, Lambda="default", lambda.type=NULL, adaptive=TRUE, weight=NULL,
+  y, X, area, adj, Lambda="default", lambda.type=NULL, adaptive=TRUE, weight=NULL, alpha=NULL,
   standardize=TRUE, MPinv=FALSE, tol=1e-5, maxit=500, progress=FALSE, out.all=FALSE
 ){
 
@@ -157,9 +177,9 @@ GGFL <- function(
   }
 
   lam.n <- length(Lambda)
-
-  alpha <- log(n)
   s.t <- sum((y-mean(y))^2)/n
+
+  if(is.null(alpha)){alpha <- log(n)}
 
   gr.labs <- 1:m
 
@@ -353,12 +373,12 @@ GGFL <- function(
 
     out <- list(
       idx = opt,
-      coef.opt = BETA.hat,
-      coef.lse = BETA.LSE,
-      coef.max = BETA.max,
-      pred = pred,
-      pred.lse = pred.lse,
-      pred.max = pred.max,
+      coefGGFL = BETA.hat,
+      coefOLS = BETA.LSE,
+      coefMAX = BETA.max,
+      fitGGFL = pred,
+      fitOLS = pred.lse,
+      fitMAX = pred.max,
       Coef = BETAs,
       rss = RSS,
       df = DF,
@@ -373,12 +393,12 @@ GGFL <- function(
   } else
   {
     out <- list(
-      coef.opt = BETA.hat,
-      coef.lse = BETA.LSE,
-      coef.max = BETA.max,
-      pred = pred,
-      pred.lse = pred.lse,
-      pred.max = pred.max,
+      coefGGFL = BETA.hat,
+      coefOLS = BETA.LSE,
+      coefMAX = BETA.max,
+      fitGGFL = pred,
+      fitOLS = pred.lse,
+      fitMAX = pred.max,
       rss = RSS[opt],
       df = DF[opt],
       msc = MSC[opt],

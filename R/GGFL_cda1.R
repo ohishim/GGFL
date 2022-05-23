@@ -3,16 +3,19 @@
 #'
 #' @importFrom magrittr %>%
 #'
-#' @param M k × k positive definite matrix
+#' @param M k * k positive definite matrix
 #' @param c k-dimensional vector
 #' @param Lambda r-dimensional vector which all elements are positive
-#' @param B r × k matrix
+#' @param B r * k matrix
 #' @param Beta0 k-dimensional initial vector
 #' @param tol tolerance for convergence
 #'
-#' @return solution: vector of the minimizer
-#' @return type: "join" or "disjoin"
-#' @return idx: index of parameter when type=join
+#' @return a list object which has the following elements:
+#' \item{solution}{vector of the minimizer}
+#'
+#' \item{type}{`"join"` or `"disjoin"`}
+#'
+#' \item{idx}{index of parameter when `type=join`}
 #'
 #' @examples
 #' #GGFL1(M, c, Lambda, B, Beta0)

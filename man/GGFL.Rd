@@ -13,6 +13,7 @@ GGFL(
   lambda.type = NULL,
   adaptive = TRUE,
   weight = NULL,
+  alpha = NULL,
   standardize = TRUE,
   MPinv = FALSE,
   tol = 1e-05,
@@ -32,65 +33,69 @@ GGFL(
 the labels for the first and second column are respectively "area" and "adj"}
 
 \item{Lambda}{candidates of tuning parameter
-if "default", the candidates are defined following the paper;
-if "uniform", the candidates are defined by uniformly dividing;
-if vector/scalar, the candidates are defined by following lambda.type}
+if \code{"default"}, the candidates are defined following the paper;
+if \code{"uniform"}, the candidates are defined by uniformly dividing;
+if vector/scalar, the candidates are defined by following \code{lambda.type}}
 
-\item{lambda.type}{option when Lambda is numeric;
-if "value", Lambda is searching points;
-if "rate", lam.max*Lambda is searching points}
+\item{lambda.type}{option when \code{Lambda} is numeric;
+if "value", \code{Lambda} is searching points;
+if "rate", \code{lam.max*Lambda} is searching points}
 
-\item{adaptive}{option only when weight=NULL; if true, adaptive penalty is adopted}
+\item{adaptive}{option only when \code{weight=NULL}; if \code{TRUE}, adaptive penalty is adopted}
 
-\item{weight}{list of penalty weight (default is TRUE)}
+\item{weight}{list of penalty weight (default is \code{NULL})}
 
-\item{standardize}{if TRUE, y and X are standardized in the sense of norm}
+\item{alpha}{a value expressing penalty strength for EGCV criterion;
+default is \code{NULL} which corresponds to \code{log(n)}}
 
-\item{MPinv}{if TRUE, the ordinary least square estimator is calculated by the Moore–Penrose inverse matrix}
+\item{standardize}{if \code{TRUE}, \code{y} and \code{X} are standardized in the sense of norm}
+
+\item{MPinv}{if \code{TRUE}, the ordinary least squares estimator is calculated by the Moore-Penrose inverse matrix}
 
 \item{tol}{tolerance for convergence}
 
 \item{maxit}{iteration limit}
 
-\item{progress}{If TRUE, progress is displayed}
+\item{progress}{If \code{TRUE}, progress is displayed}
 
-\item{out.all}{if TRUE, results for all tuning parameters are output;
-if FALSE, results for only the optimal tuning parameter are output}
+\item{out.all}{if \code{TRUE}, results for all tuning parameters are output;
+if \code{FALSE}, results for only the optimal tuning parameter are output}
 }
 \value{
-idx: the index of the optimal tuning parameter
+a list object which has the following elements:
+\item{idx}{the index of the optimal tuning parameter}
 
-Coef: list of GGFL estimates
+\item{Coef}{list of GGFL estimates}
 
-rss: vector or scalar of residual sum of squares
+\item{rss}{vector or scalar of residual sum of squares}
 
-df: vector or scalar of degrees of freedom
+\item{df}{vector or scalar of degrees of freedom}
 
-msc: vector or scalar of values of model selection criterion
+\item{msc}{vector or scalar of values of EGCV criterion}
 
-r2: vector or scalar of coefficient of determination
+\item{r2}{vector or scalar of coefficient of determination}
 
-mer: vector or scalar of median error rate
+\item{mer}{vector or scalar of median error rate}
 
-lambda: vector or scalar of tuning parameters
+\item{lambda}{vector or scalar of tuning parameters}
 
-weight: list of penalty weight
+\item{weight}{list of penalty weight}
 
-gr.labs: list of labels for groups
+\item{gr.labs}{list of labels for groups}
 
-time: runtime (s)
+\item{time}{runtime (s)}
 
-coef.opt: matrix of GGFL estimates
+\item{coefGGFL}{matrix of GGFL estimates}
 
-coef.lse: matrix of OLS estimates
+\item{coefOLS}{matrix of OLS estimates}
 
-coef.max: matrix of estimates when all groups are equal
+\item{coefMAX}{matrix of estimates when all groups are equal}
 
-pred: vecter of predictive values for coef.opt
+\item{fitGGFL}{vecter of fitted values for \code{coefGGFL}}
 
-pred.lse: vecter of predictive values for coef.lse
+\item{fitOLS}{vecter of fitted values for \code{coefOLS}}
 
-pred.max: vecter of predictive values for coef.max
+\item{fitMAX}{vecter of fitted values for \code{coefMAX}}
 }
 \description{
 \code{GGFL} solving GGFL optimization problem via coordinate descent algorithm
