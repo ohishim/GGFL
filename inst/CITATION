@@ -5,7 +5,7 @@ citEntry(
   title    = "Coordinate optimization for GGFL",
   author   = "Mineaki Ohishi",
   year     = 2022,
-  note     = "R package version 0.1.0"
+  note     = "R package version 0.1.0",
   url      = "https://github.com/ohishim/GGFL",
   textVersion = paste("
     Mineaki Ohishi (2022).
