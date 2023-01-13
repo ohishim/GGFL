@@ -1,10 +1,17 @@
 
-# GGFL
+# GGFL (v0.1.0; in development)
 
 <!-- badges: start -->
 <!-- badges: end -->
 
 This package gives GGFL estimates via coordinate descent algorithm.
+
+**cite this package**:  
+Ohishi, M. (2022).
+GGFL: Coordinate optimization for GGFL.
+R package version 0.1.0.
+https://github.com/ohishim/GGFL
+
 
 ## Installation
 
@@ -68,4 +75,9 @@ D <- split(adj$adjNO, adj$areaNO)
 res <- pGGFL(yli, Xli, Zli, D)
 ```
 
+## Reference
 
+1. Ohishi, M., Okamura, K., Itoh, Y. & Yanagihara, H. (2021).
+Coordinate descent algorithm for generalized group fused Lasso.
+*Hiroshima Statistical Research Group Technical Report*, TR-No. 21-02, Hiroshima University.
+[[PDF](http://www.math.sci.hiroshima-u.ac.jp/stat/TR/TR21/TR21-02.pdf)]

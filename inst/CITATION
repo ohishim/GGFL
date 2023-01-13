@@ -3,12 +3,12 @@ citHeader("To cite GGFL in publications use:")
 citEntry(
   entry    = "Manual",
   title    = "GGFL: Coordinate optimization for GGFL",
-  author   = "Mineaki Ohishi",
+  author   = "Ohishi M.",
   year     = 2022,
   note     = "R package version 0.1.0",
   url      = "https://github.com/ohishim/GGFL",
   textVersion = paste("
-    Mineaki Ohishi (2022).
+    Ohishi, M. (2022).
     GGFL: Coordinate optimization for GGFL.
     R package version 0.1.0.
     https://github.com/ohishim/GGFL
