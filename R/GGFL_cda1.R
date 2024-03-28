@@ -1,5 +1,5 @@
 #' @title Sub-function for GGFL
-#' @description \code{GGFL1} This is required to execute "GGFL" or "GGFLa"
+#' @description \code{GGFL1} This is required to execute "GGFL" or "pGGFL" (v0.2.0)
 #'
 #' @importFrom magrittr %>%
 #'
@@ -9,6 +9,8 @@
 #' @param B r * k matrix
 #' @param Beta0 k-dimensional initial vector
 #' @param tol tolerance for convergence
+#' @param convC function which calculates a convergence criterion
+#' @param maxit iteration limit
 #'
 #' @return a list object which has the following elements:
 #' \item{solution}{vector of the minimizer}
@@ -20,11 +22,17 @@
 #' @examples
 #' #GGFL1(M, c, Lambda, B, Beta0)
 
-GGFL1 <- function(M, c, Lambda, B, Beta0, tol=1e-5){
+GGFL1 <- function(M, c, Lambda, B, Beta0, tol=1e-5, convC=NULL, maxit=500){
 
   type <- "-"
 
   norm2 <- function(x){sqrt(sum(x^2))}
+
+  if(is.null(convC)){
+    convC <- function(Beta, M, c, Lambda, B, r, Beta0){
+      max((Beta - Beta0)^2 / Beta0^2)
+    }
+  }
 
   r <- length(Lambda)
 
@@ -88,14 +96,14 @@ GGFL1 <- function(M, c, Lambda, B, Beta0, tol=1e-5){
     dif <- 1
     iter <- 0
 
-    while(dif > tol)
+    while((dif > tol) & (iter < maxit))
     {
       iter <- iter + 1
 
       Beta.bef <- Beta.aft
       Beta.aft <- solve(Q(Beta.bef)) %*% h(Beta.bef) %>% drop
 
-      dif <- max((Beta.aft - Beta.bef)^2) / max(Beta.bef^2)
+      dif <- convC(Beta.aft, M, c, Lambda, B, r, Beta.bef)
     } #end while dif
 
     Beta.hat <- Beta.aft

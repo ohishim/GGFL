@@ -1,15 +1,15 @@
 
-# GGFL (v0.1.0; in development)
+# GGFL (v0.2.0; in development)
 
 <!-- badges: start -->
 <!-- badges: end -->
 
 This package gives GGFL estimates via coordinate descent algorithm.
 
-**cite this package**:  
-Ohishi, M. (2022).
+**cite this package of the latest version**:  
+Ohishi, M. (2024).
 GGFL: Coordinate optimization for GGFL.
-R package version 0.1.0.
+R package version 0.2.0.
 https://github.com/ohishim/GGFL
 
 

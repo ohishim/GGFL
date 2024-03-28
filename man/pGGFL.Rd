@@ -13,8 +13,10 @@ pGGFL(
   Lambda = "default",
   alpha = NULL,
   MPinv = FALSE,
+  maxit = 500,
   progress = FALSE,
-  out.all = FALSE
+  out.all = FALSE,
+  cwu.control = NULL
 )
 }
 \arguments{
@@ -37,10 +39,18 @@ default is \code{NULL} which corresponds to \code{log(n)}}
 
 \item{MPinv}{if TRUE, the ordinary least squares estimator is calculated by the Moore-Penrose inverse matrix}
 
+\item{maxit}{iteration limit}
+
 \item{progress}{If \code{TRUE}, progress is displayed}
 
 \item{out.all}{if \code{TRUE}, results for all tuning parameters are output;
 if \code{FALSE}, results for only the optimal tuning parameter are output}
+
+\item{cwu.control}{a list object of parameters for controlling the coordinate wise update
+which can has the two elements \code{conv.check} and \code{tol};
+\code{conv.check} is one of "coef" (default) and "grad" and solution convergence is
+determined based on the coefficients or gradient, respectively;
+\code{tol} is a tolerance for convergence of which the default is 1e-5}
 }
 \value{
 a list object which has the following elements:
@@ -83,10 +93,12 @@ a list object which has the following elements:
 \item{fitOLS}{vector of fitted values for \code{coef1OLS} and \code{coef2OLS}}
 
 \item{fitMAX}{vector of fitted values for \code{coef1MAX} and \code{coef2MAX}}
+
+\item{cwu.control}{\code{cwu.control}}
 }
 \description{
 \code{pGGFL} More general version of Coordinate optimization for GGFL.
-Only partial explanatory variables are penalized.
+Only partial explanatory variables are penalized. (v0.2.0)
 }
 \examples{
 #pGGFL(yli, Xli, Zli, D)

@@ -1,6 +1,6 @@
 #' @title Coordinate optimization for GGFL
 #' @description \code{pGGFL} More general version of Coordinate optimization for GGFL.
-#'   Only partial explanatory variables are penalized.
+#'   Only partial explanatory variables are penalized. (v0.2.0)
 #'
 #' @importFrom magrittr %>%
 #' @importFrom MASS ginv
@@ -16,9 +16,15 @@
 #' @param alpha a value expressing penalty strength for EGCV criterion;
 #'   default is `NULL` which corresponds to `log(n)`
 #' @param MPinv if TRUE, the ordinary least squares estimator is calculated by the Moore-Penrose inverse matrix
+#' @param maxit iteration limit
 #' @param progress If `TRUE`, progress is displayed
 #' @param out.all if `TRUE`, results for all tuning parameters are output;
 #'   if `FALSE`, results for only the optimal tuning parameter are output
+#' @param cwu.control a list object of parameters for controlling the coordinate wise update
+#'   which can has the two elements `conv.check` and `tol`;
+#'   `conv.check` is one of "coef" (default) and "grad" and solution convergence is
+#'     determined based on the coefficients or gradient, respectively;
+#'   `tol` is a tolerance for convergence of which the default is 1e-5
 #'
 #' @return a list object which has the following elements:
 #' \item{coef1}{list of GGFL estimates for penalized variables}
@@ -61,13 +67,15 @@
 #'
 #' \item{fitMAX}{vector of fitted values for `coef1MAX` and `coef2MAX`}
 #'
+#' \item{cwu.control}{`cwu.control`}
+#'
 #' @export
 #' @examples
 #' #pGGFL(yli, Xli, Zli, D)
 
 pGGFL <- function(
   yli, Xli, Zli, D, tol=1e-5, Lambda="default", alpha=NULL,
-  MPinv=FALSE, progress=FALSE, out.all=FALSE
+  MPinv=FALSE, maxit=500, progress=FALSE, out.all=FALSE, cwu.control=NULL
 ){
 
   ##############################################################################
@@ -96,6 +104,46 @@ pGGFL <- function(
 
   if(is.null(alpha)){alpha <- log(n)}
   s.t <- sum((y-mean(y))^2)/n
+
+  if(is.null(cwu.control))
+  {
+    cwu.control <- list(conv.check = "coef", tol = 1e-5)
+  } else
+  {
+    cwu.control <- list(
+      conv.check = ifelse(is.null(cwu.control$conv.check), "coef", cwu.control$conv.check),
+      tol = ifelse(is.null(cwu.control$tol), 1e-5, cwu.control$tol)
+    )
+
+    if(!(cwu.control$conv.check %in% c("coef", "grad")))
+    {
+      cwu.control$conv.check <- "coef"
+      cwu.control$warning <- "`conv.check` is replaced by `coef`"
+      warning("`conv.check` is replaced by `coef` because it is wrong")
+    }
+  }
+
+  tol1 <- cwu.control$tol
+
+  if(cwu.control$conv.check == "coef")
+  {
+    convC <- function(Beta, M, c, Lambda, B, r, Beta0){
+      max((Beta - Beta0)^2 / Beta0^2)
+    }
+  } else
+  {
+    convC <- function(Beta, M, c, Lambda, B, r, Beta0){
+
+      Grad <- 2*(drop(M%*%Beta) - c) + (
+        lapply(1:r, function(.x){
+          a <- Beta - B[.x,]
+          return(Lambda[.x]*a/norm2(a))
+        }) %>% Reduce("+", .)
+      )
+
+      return(abs(Grad) %>% max)
+    }
+  }
 
   #=============================================================================
   ###   estimates for lambda.max
@@ -250,7 +298,7 @@ pGGFL <- function(
           labj <- sapply(idxj, function(x){labj[x[1]]})
         }
 
-        resj <- GGFL1(X.Xli[[j]], X.yt[[j]], 2*lambda*wj, Bj, BETA.aft[j,])
+        resj <- GGFL1(X.Xli[[j]], X.yt[[j]], 2*lambda*wj, Bj, BETA.aft[j,], tol1, convC, maxit)
         BETA.aft[j,] <- resj$solution
 
         if(resj$type == "join")
@@ -328,8 +376,7 @@ pGGFL <- function(
             X.Xli[El] %>% Reduce("+", .),
             X.yt[El] %>% Reduce("+", .),
             2*lambda*w1,
-            Bl,
-            XI[l,]
+            Bl, XI[l,], tol1, convC, maxit
           )
           XI[l,] <- resl$solution
           BETA.aft[El,] <- matrix(XI[l,], length(El), k, byrow=T)
@@ -359,8 +406,8 @@ pGGFL <- function(
       ##########################################################################
 
       dif <- max(
-        max((BETA.aft - BETA.bef)^2) / max(BETA.bef^2),
-        max((Gamma.aft - Gamma.bef)^2) / max(Gamma.bef^2)
+        max((BETA.aft - BETA.bef)^2 / BETA.bef^2),
+        max((Gamma.aft - Gamma.bef)^2 / Gamma.bef^2)
       )
 
       if(progress){print(paste0(lam.i, "_", iter, "_", dif))}
@@ -395,7 +442,8 @@ pGGFL <- function(
       lambda = Lambda,
       weight = W,
       gr.labs = Gr.labs,
-      time = t2-t1
+      time = t2-t1,
+      cwu.control = cwu.control
     )
   } else
   {
@@ -424,7 +472,8 @@ pGGFL <- function(
       lambda = Lambda[opt],
       weight = W,
       gr.labs = Gr.labs[[opt]],
-      time = t2-t1
+      time = t2-t1,
+      cwu.control = cwu.control
     )
   }
 

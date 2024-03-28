@@ -19,7 +19,8 @@ GGFL(
   tol = 1e-05,
   maxit = 500,
   progress = FALSE,
-  out.all = FALSE
+  out.all = FALSE,
+  cwu.control = NULL
 )
 }
 \arguments{
@@ -60,6 +61,12 @@ default is \code{NULL} which corresponds to \code{log(n)}}
 
 \item{out.all}{if \code{TRUE}, results for all tuning parameters are output;
 if \code{FALSE}, results for only the optimal tuning parameter are output}
+
+\item{cwu.control}{a list object of parameters for controlling the coordinate wise update
+which can has the two elements \code{conv.check} and \code{tol};
+\code{conv.check} is one of "coef" (default) and "grad" and solution convergence is
+determined based on the coefficients or gradient, respectively;
+\code{tol} is a tolerance for convergence of which the default is 1e-5}
 }
 \value{
 a list object which has the following elements:
@@ -96,9 +103,11 @@ a list object which has the following elements:
 \item{fitOLS}{vecter of fitted values for \code{coefOLS}}
 
 \item{fitMAX}{vecter of fitted values for \code{coefMAX}}
+
+\item{cwu.control}{\code{cwu.control}}
 }
 \description{
-\code{GGFL} solving GGFL optimization problem via coordinate descent algorithm
+\code{GGFL} solving GGFL optimization problem via coordinate descent algorithm (v0.2.0)
 }
 \examples{
 #GGFL(y, X, area, adj)

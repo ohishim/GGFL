@@ -4,13 +4,13 @@ citEntry(
   entry    = "Manual",
   title    = "GGFL: Coordinate optimization for GGFL",
   author   = "Ohishi M.",
-  year     = 2022,
-  note     = "R package version 0.1.0",
+  year     = 2024,
+  note     = "R package version 0.2.0",
   url      = "https://github.com/ohishim/GGFL",
   textVersion = paste("
-    Ohishi, M. (2022).
+    Ohishi, M. (2024).
     GGFL: Coordinate optimization for GGFL.
-    R package version 0.1.0.
+    R package version 0.2.0.
     https://github.com/ohishim/GGFL
   ")
 )

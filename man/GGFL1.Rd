@@ -4,7 +4,7 @@
 \alias{GGFL1}
 \title{Sub-function for GGFL}
 \usage{
-GGFL1(M, c, Lambda, B, Beta0, tol = 1e-05)
+GGFL1(M, c, Lambda, B, Beta0, tol = 1e-05, convC = NULL, maxit = 500)
 }
 \arguments{
 \item{M}{k * k positive definite matrix}
@@ -18,6 +18,10 @@ GGFL1(M, c, Lambda, B, Beta0, tol = 1e-05)
 \item{Beta0}{k-dimensional initial vector}
 
 \item{tol}{tolerance for convergence}
+
+\item{convC}{function which calculates a convergence criterion}
+
+\item{maxit}{iteration limit}
 }
 \value{
 a list object which has the following elements:
@@ -28,7 +32,7 @@ a list object which has the following elements:
 \item{idx}{index of parameter when \code{type=join}}
 }
 \description{
-\code{GGFL1} This is required to execute "GGFL" or "GGFLa"
+\code{GGFL1} This is required to execute "GGFL" or "pGGFL" (v0.2.0)
 }
 \examples{
 #GGFL1(M, c, Lambda, B, Beta0)
