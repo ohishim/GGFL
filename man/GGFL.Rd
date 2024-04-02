@@ -57,7 +57,8 @@ default is \code{NULL} which corresponds to \code{log(n)}}
 
 \item{maxit}{iteration limit}
 
-\item{progress}{If \code{TRUE}, progress is displayed}
+\item{progress}{If \code{TRUE}, progress is displayed of the form
+"lambda index_iteration number_convergence criterion_objective function"}
 
 \item{out.all}{if \code{TRUE}, results for all tuning parameters are output;
 if \code{FALSE}, results for only the optimal tuning parameter are output}
@@ -107,7 +108,7 @@ a list object which has the following elements:
 \item{cwu.control}{\code{cwu.control}}
 }
 \description{
-\code{GGFL} solving GGFL optimization problem via coordinate descent algorithm (v0.2.0)
+\code{GGFL} solving GGFL optimization problem via coordinate descent algorithm (v0.2.1)
 }
 \examples{
 #GGFL(y, X, area, adj)

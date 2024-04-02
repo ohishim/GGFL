@@ -32,7 +32,7 @@ a list object which has the following elements:
 \item{idx}{index of parameter when \code{type=join}}
 }
 \description{
-\code{GGFL1} This is required to execute "GGFL" or "pGGFL" (v0.2.0)
+\code{GGFL1} This is required to execute "GGFL" or "pGGFL" (v0.3.2)
 }
 \examples{
 #GGFL1(M, c, Lambda, B, Beta0)

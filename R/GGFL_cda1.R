@@ -1,7 +1,7 @@
 #' @title Sub-function for GGFL
-#' @description \code{GGFL1} This is required to execute "GGFL" or "pGGFL" (v0.2.0)
+#' @description \code{GGFL1} This is required to execute "GGFL" or "pGGFL" (v0.3.2)
 #'
-#' @importFrom magrittr %>%
+#' @importFrom magrittr %>% equals
 #'
 #' @param M k * k positive definite matrix
 #' @param c k-dimensional vector
@@ -36,48 +36,35 @@ GGFL1 <- function(M, c, Lambda, B, Beta0, tol=1e-5, convC=NULL, maxit=500){
 
   r <- length(Lambda)
 
-  v <- sapply(1:r, function(s){
+  #---   checking fusion   -----------------------------------------------------
+
+  V <- lapply(1:r, function(s){
     bs <- B[s,]
     out1 <- 2*(M%*%bs - c) %>% drop
-    out2 <- lapply((1:r)[-s], function(l){
-      a <- bs - B[l,]
-      Lambda[l] * a / norm2(a)
-    }) %>% Reduce("+", .)
 
-    return(norm2(out1 + out2))
+    if(r == 1)
+    {
+      out2 <- 0
+    } else
+    {
+      out2 <- lapply((1:r)[-s], function(l){
+        a <- bs - B[l,]
+        Lambda[l] * a / norm2(a)
+      }) %>% Reduce("+", .)
+    }
+
+    return(out1 + out2)
   })
 
-  s <- which(Lambda >= v)
+  s <- which(Lambda >= sapply(V, norm2))
 
   if(length(s) == 1)
-  {
+  { #---   fusion case   -------------------------------------------------------
     Beta.hat <- B[s,]
     type <- "join"
 
   } else if(length(s) == 0)
-  {
-    check <- apply(B, 1, function(b){all(b == Beta0)}) %>% which
-    if(length(check) == 1)
-    {
-      v <- lapply(check, function(s){
-        bs <- B[s,]
-        out1 <- 2*(M%*%bs - c) %>% drop
-        out2 <- lapply((1:r)[-s], function(l){
-          a <- bs - B[l,]
-          Lambda[l] * a / norm2(a)
-        }) %>% Reduce("+", .)
-
-        return(out1 + out2)
-      })[[1]]
-
-      Beta0 <- Beta0 - (v/norm2(v))
-
-      type <- "disjoin"
-    } else if(length(check) > 1)
-    {
-      stop("The error 1 occurs in GGFL1")
-    }
-
+  { #---   searching solution   ------------------------------------------------
     k <- length(Beta0)
 
     Q <- function(Beta){
@@ -92,6 +79,36 @@ GGFL1 <- function(M, c, Lambda, B, Beta0, tol=1e-5, convC=NULL, maxit=500){
       return(2*c + a)
     }
 
+    updateB <- function(Beta){
+      check <- scale(B, center=Beta, scale=F) %>% rowSums %>% equals(0) %>% which
+      checkN <- length(check)
+
+      if(checkN == 0)
+      {
+        .Beta <- Beta
+      } else if(checkN == 1)
+      {
+        v <- V[[check]]
+
+        if(r == 1)
+        {
+          d <- 1
+        } else
+        {
+          d <- Lambda[check]*min(
+            scale(B[-check,,drop=F], center=B[check,], scale=F) %>% apply(1, norm2)
+          )/sum(Lambda)
+        }
+
+        .Beta <- Beta - (d/5)*v/norm2(v)
+      } else
+      {
+        stop("The error 1 occurs in `GGFL1`")
+      }
+
+      return(solve(Q(.Beta)) %*% h(.Beta) %>% drop)
+    }
+
     Beta.aft <- Beta0
     dif <- 1
     iter <- 0
@@ -101,16 +118,34 @@ GGFL1 <- function(M, c, Lambda, B, Beta0, tol=1e-5, convC=NULL, maxit=500){
       iter <- iter + 1
 
       Beta.bef <- Beta.aft
-      Beta.aft <- solve(Q(Beta.bef)) %*% h(Beta.bef) %>% drop
+      Beta.aft <- updateB(Beta.bef)
 
       dif <- convC(Beta.aft, M, c, Lambda, B, r, Beta.bef)
     } #end while dif
 
-    Beta.hat <- Beta.aft
+    obj <- function(Beta){
+      sum(Beta * drop(M%*%Beta)) - 2*sum(c*Beta) + sum(
+        sapply(1:r, function(j){
+          Lambda[j]*norm2(Beta - B[j,])
+        })
+      )
+    }
+
+    idx <- apply(B, 1, obj) %>% c(obj(Beta.aft)) %>% which.min
+
+    if(idx == r+1)
+    {
+      Beta.hat <- Beta.aft
+    } else
+    {
+      Beta.hat <- B[idx,]
+      type <- "join"
+      s <- idx
+    }
 
   } else
   {
-    stop("The error 2 occurs in GGFL1")
+    stop("The error 2 occurs in `GGFL1`")
   }
 
   return(

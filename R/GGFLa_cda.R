@@ -1,6 +1,6 @@
 #' @title Coordinate optimization for GGFL
 #' @description \code{pGGFL} More general version of Coordinate optimization for GGFL.
-#'   Only partial explanatory variables are penalized. (v0.2.0)
+#'   Only partial explanatory variables are penalized. (v0.2.1)
 #'
 #' @importFrom magrittr %>%
 #' @importFrom MASS ginv
@@ -17,7 +17,8 @@
 #'   default is `NULL` which corresponds to `log(n)`
 #' @param MPinv if TRUE, the ordinary least squares estimator is calculated by the Moore-Penrose inverse matrix
 #' @param maxit iteration limit
-#' @param progress If `TRUE`, progress is displayed
+#' @param progress If `TRUE`, progress is displayed of the form
+#'   "lambda index_iteration number_convergence criterion_objective function"
 #' @param out.all if `TRUE`, results for all tuning parameters are output;
 #'   if `FALSE`, results for only the optimal tuning parameter are output
 #' @param cwu.control a list object of parameters for controlling the coordinate wise update
@@ -128,7 +129,7 @@ pGGFL <- function(
   if(cwu.control$conv.check == "coef")
   {
     convC <- function(Beta, M, c, Lambda, B, r, Beta0){
-      max((Beta - Beta0)^2 / Beta0^2)
+      max((Beta - Beta0)^2 / Beta0^2, na.rm = TRUE)
     }
   } else
   {
@@ -142,6 +143,25 @@ pGGFL <- function(
       )
 
       return(abs(Grad) %>% max)
+    }
+  }
+
+  if(progress)
+  {
+    fobj <- function(yli, Xli, Zli, D, BETA, Gamma, lambda, W, r){
+      sapply(1:m, function(j){
+        wj <- W[[j]]
+        Dj <- D[[j]]
+        Bj <- BETA[Dj,,drop=F]
+        rj <- r[j]
+        Betaj <- BETA[j,]
+
+        rss <- sum((yli[[j]] - Xli[[j]]%*%BETA[j,] - Zli[[j]]%*%Gamma)^2)
+        pen <- scale(Bj, center=Betaj, scale=F) %>% apply(1, norm2) %>%
+          multiply_by(wj) %>% sum
+
+        return(rss + lambda*pen)
+      }) %>% sum
     }
   }
 
@@ -406,11 +426,14 @@ pGGFL <- function(
       ##########################################################################
 
       dif <- max(
-        max((BETA.aft - BETA.bef)^2 / BETA.bef^2),
-        max((Gamma.aft - Gamma.bef)^2 / Gamma.bef^2)
+        max((BETA.aft - BETA.bef)^2 / BETA.bef^2, na.rm = TRUE),
+        max((Gamma.aft - Gamma.bef)^2 / Gamma.bef^2, na.rm = TRUE)
       )
 
-      if(progress){print(paste0(lam.i, "_", iter, "_", dif))}
+      if(progress)
+      {
+        print(paste(lam.i, iter, dif, fobj(yli, Xli, Zli, D, BETA.aft, Gamma.aft, lambda, W, r), sep="_"))
+      }
     } #end while dif
 
     BETAs[[lam.i]] <- BETA.aft
