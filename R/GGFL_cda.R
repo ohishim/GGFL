@@ -1,5 +1,5 @@
 #' @title Coordinate optimization for GGFL
-#' @description \code{GGFL} solving GGFL optimization problem via coordinate descent algorithm (v0.2.1)
+#' @description \code{GGFL} solving GGFL optimization problem via coordinate descent algorithm (v0.2.2)
 #'
 #' @importFrom magrittr %>% multiply_by
 #' @importFrom MASS ginv
@@ -38,26 +38,6 @@
 #' @return a list object which has the following elements:
 #' \item{idx}{the index of the optimal tuning parameter}
 #'
-#' \item{Coef}{list of GGFL estimates}
-#'
-#' \item{rss}{vector or scalar of residual sum of squares}
-#'
-#' \item{df}{vector or scalar of degrees of freedom}
-#'
-#' \item{msc}{vector or scalar of values of EGCV criterion}
-#'
-#' \item{r2}{vector or scalar of coefficient of determination}
-#'
-#' \item{mer}{vector or scalar of median error rate}
-#'
-#' \item{lambda}{vector or scalar of tuning parameters}
-#'
-#' \item{weight}{list of penalty weight}
-#'
-#' \item{gr.labs}{list of labels for groups}
-#'
-#' \item{time}{runtime (s)}
-#'
 #' \item{coefGGFL}{matrix of GGFL estimates}
 #'
 #' \item{coefOLS}{matrix of OLS estimates}
@@ -69,6 +49,30 @@
 #' \item{fitOLS}{vecter of fitted values for `coefOLS`}
 #'
 #' \item{fitMAX}{vecter of fitted values for `coefMAX`}
+#'
+#' \item{Coef}{list of GGFL estimates}
+#'
+#' \item{obje}{objective function}
+#'
+#' \item{rss}{residual sum of squares}
+#'
+#' \item{df}{degrees of freedom}
+#'
+#' \item{msc}{EGCV criterion}
+#'
+#' \item{r2}{coefficient of determination}
+#'
+#' \item{mer}{median error rate}
+#'
+#' \item{iter}{the number of iteration}
+#'
+#' \item{lambda}{tuning parameter}
+#'
+#' \item{weight}{list of penalty weight}
+#'
+#' \item{gr.labs}{list of labels for groups}
+#'
+#' \item{time}{runtime (in seconds)}
 #'
 #' \item{cwu.control}{`cwu.control`}
 #'
@@ -231,23 +235,21 @@ GGFL <- function(
     }
   }
 
-  if(progress)
-  {
-    fobj <- function(yli, Xli, D, BETA, lambda, W, r){
-      sapply(1:m, function(j){
-        wj <- W[[j]]
-        Dj <- D[[j]]
-        Bj <- BETA[Dj,,drop=F]
-        rj <- r[j]
-        Betaj <- BETA[j,]
+  fobj <- function(rss, D, BETA, lambda, W){
 
-        rss <- sum((yli[[j]] - Xli[[j]]%*%BETA[j,])^2)
-        pen <- scale(Bj, center=Betaj, scale=F) %>% apply(1, norm2) %>%
-          multiply_by(wj) %>% sum
+    pen <- sapply(1:m, function(j){
+      wj <- W[[j]]
+      Dj <- D[[j]]
+      Bj <- BETA[Dj,,drop=F]
+      Betaj <- BETA[j,]
 
-        return(rss + lambda*pen)
-      }) %>% sum
-    }
+      out <- scale(Bj, center=Betaj, scale=F) %>% apply(1, norm2) %>%
+        multiply_by(wj) %>% sum
+
+      return(out)
+    }) %>% sum
+
+    return(rss + lambda*pen)
   }
 
   ##############################################################################
@@ -257,7 +259,7 @@ GGFL <- function(
   BETA.aft <- BETA.LSE
 
   BETAs <- Gr.labs <- list()
-  RSS <- DF <- MSC <- R2 <- MER <- numeric(lam.n)
+  RSS <- DF <- MSC <- R2 <- MER <- Obje <- IterN <- numeric(lam.n)
 
   for(lam.i in 1:lam.n)
   {
@@ -395,21 +397,35 @@ GGFL <- function(
 
       if(progress)
       {
-        print(paste(lam.i, iter, dif, fobj(yli, Xli, D, BETA.aft, lambda, W, r), sep="_"))
+        yli.hat <- lapply(1:m, function(j){Xli[[j]] %*% BETA.aft[j,] %>% drop})
+        .rss <- sapply(1:m, function(j){sum((yli[[j]] - yli.hat[[j]])^2)}) %>% sum
+        obj <- fobj(.rss, D, BETA.aft, lambda, W)
+
+        print(paste(lam.i, iter, dif, obj, sep="_"))
       }
     } #end while dif
 
     BETAs[[lam.i]] <- BETA.aft
     Gr.labs[[lam.i]] <- match(gr.labs, unique(gr.labs))
 
-    yli.hat <- lapply(1:m, function(j){Xli[[j]] %*% BETA.aft[j,] %>% drop})
-    RSS[lam.i] <- rss <- (sapply(1:m, function(j){sum((yli[[j]] - yli.hat[[j]])^2)}) %>% sum) / n
+    if(progress)
+    {
+      RSS[lam.i] <- rss <- .rss/n
+      Obje[lam.i] <- obj
+    } else
+    {
+      yli.hat <- lapply(1:m, function(j){Xli[[j]] %*% BETA.aft[j,] %>% drop})
+      RSS[lam.i] <- rss <- (sapply(1:m, function(j){sum((yli[[j]] - yli.hat[[j]])^2)}) %>% sum) / n
+      Obje[lam.i] <- fobj(n*rss, D, BETA.aft, lambda, W)
+    }
+
     DF[lam.i] <- df <- length(unique(gr.labs))*k
 
     MSC[lam.i] <- rss / ((1 - (df/n))^alpha)
 
     R2[lam.i] <- 1 - (rss/s.t)
     MER[lam.i] <- median(abs(y-unlist(yli.hat))/abs(y))
+    IterN[lam.i] <- iter
 
   } #end for lam.i
   t2 <- proc.time()[3]
@@ -449,11 +465,13 @@ GGFL <- function(
       fitOLS = pred.lse,
       fitMAX = pred.max,
       Coef = BETAs,
+      obje = Obje,
       rss = RSS,
       df = DF,
       msc = MSC,
       r2 = R2,
       mer = MER,
+      iter = IterN,
       lambda = Lambda,
       weight = W,
       gr.labs = Gr.labs,
@@ -469,6 +487,7 @@ GGFL <- function(
       fitGGFL = pred,
       fitOLS = pred.lse,
       fitMAX = pred.max,
+      obje = Obje[opt],
       rss = RSS[opt],
       df = DF[opt],
       msc = MSC[opt],

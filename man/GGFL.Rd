@@ -73,26 +73,6 @@ determined based on the coefficients or gradient, respectively;
 a list object which has the following elements:
 \item{idx}{the index of the optimal tuning parameter}
 
-\item{Coef}{list of GGFL estimates}
-
-\item{rss}{vector or scalar of residual sum of squares}
-
-\item{df}{vector or scalar of degrees of freedom}
-
-\item{msc}{vector or scalar of values of EGCV criterion}
-
-\item{r2}{vector or scalar of coefficient of determination}
-
-\item{mer}{vector or scalar of median error rate}
-
-\item{lambda}{vector or scalar of tuning parameters}
-
-\item{weight}{list of penalty weight}
-
-\item{gr.labs}{list of labels for groups}
-
-\item{time}{runtime (s)}
-
 \item{coefGGFL}{matrix of GGFL estimates}
 
 \item{coefOLS}{matrix of OLS estimates}
@@ -105,10 +85,34 @@ a list object which has the following elements:
 
 \item{fitMAX}{vecter of fitted values for \code{coefMAX}}
 
+\item{Coef}{list of GGFL estimates}
+
+\item{obje}{objective function}
+
+\item{rss}{residual sum of squares}
+
+\item{df}{degrees of freedom}
+
+\item{msc}{EGCV criterion}
+
+\item{r2}{coefficient of determination}
+
+\item{mer}{median error rate}
+
+\item{iter}{the number of iteration}
+
+\item{lambda}{tuning parameter}
+
+\item{weight}{list of penalty weight}
+
+\item{gr.labs}{list of labels for groups}
+
+\item{time}{runtime (in seconds)}
+
 \item{cwu.control}{\code{cwu.control}}
 }
 \description{
-\code{GGFL} solving GGFL optimization problem via coordinate descent algorithm (v0.2.1)
+\code{GGFL} solving GGFL optimization problem via coordinate descent algorithm (v0.2.2)
 }
 \examples{
 #GGFL(y, X, area, adj)
