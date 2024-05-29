@@ -77,7 +77,7 @@ res <- pGGFL(yli, Xli, Zli, D)
 
 ## Reference
 
-1. Ohishi, M., Okamura, K., Itoh, Y. & Yanagihara, H. (2021).
+1. Ohishi, M., Okamura, K., Itoh, Y., Wakaki, H. & Yanagihara, H. (2024).
 Coordinate descent algorithm for generalized group fused Lasso.
-*Hiroshima Statistical Research Group Technical Report*, TR-No. 21-02, Hiroshima University.
-[[PDF](http://www.math.sci.hiroshima-u.ac.jp/stat/TR/TR21/TR21-02.pdf)]
+*Behaviormetrika* (in press).
+doi: [10.1007/s41237-024-00233-6](https://doi.org/10.1007/s41237-024-00233-6)
