@@ -1,5 +1,5 @@
 #' @title Sub-function for GGFL
-#' @description \code{GGFL1} This is required to execute "GGFL" or "pGGFL" (v0.3.2)
+#' @description \code{GGFL1} This is required to execute "GGFL" or "pGGFL" (v0.4.0)
 #'
 #' @importFrom magrittr %>% equals
 #'
@@ -80,7 +80,7 @@ GGFL1 <- function(M, c, Lambda, B, Beta0, tol=1e-5, convC=NULL, maxit=500){
     }
 
     updateB <- function(Beta){
-      check <- scale(B, center=Beta, scale=F) %>% rowSums %>% equals(0) %>% which
+      check <- scale(B, center=Beta, scale=F) %>% abs %>% rowSums %>% equals(0) %>% which
       checkN <- length(check)
 
       if(checkN == 0)
@@ -136,6 +136,10 @@ GGFL1 <- function(M, c, Lambda, B, Beta0, tol=1e-5, convC=NULL, maxit=500){
     if(idx == r+1)
     {
       Beta.hat <- Beta.aft
+
+      if(scale(B, center=Beta0, scale=F) %>% abs %>% rowSums %>% equals(0) %>% any){
+        type <- "disjoin"
+      }
     } else
     {
       Beta.hat <- B[idx,]
