@@ -28,8 +28,8 @@ devtools::install_github("ohishim/GGFL")
 ## Example 1
 
 This package has an example dataset as the two objects `exdata` and `adj`.
-The `exdata` has 500 individuals and 22 items of which labels are "y", "X1", ..., "X20", and "area".
-The "y" is a response variable, "X1", ..., "X20" are explanatory variables, and "area" is a variable of spatial information which has 20 areas.  
+The `exdata` has 500 individuals and 22 items of which labels are "y", "X1", ..., "X20", and "group".
+The "y" is a response variable, "X1", ..., "X20" are explanatory variables, and "group" is a variable of spatial information which has 20 areas.  
 
 This example requires the following package:
 ```r
