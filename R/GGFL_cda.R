@@ -1,5 +1,5 @@
 #' @title Coordinate optimization for GGFL
-#' @description \code{GGFL} solving GGFL optimization problem via coordinate descent algorithm (v1.0.1)
+#' @description \code{GGFL} solving GGFL optimization problem via coordinate descent algorithm (v1.0.2)
 #'
 #' @importFrom dplyr arrange mutate select
 #' @importFrom magrittr %>% multiply_by set_colnames set_names
@@ -97,7 +97,7 @@ GGFL <- function(
   .y <- unlist(y_)
   D <- split(adj[,2], adj[,1]); r <- sapply(D, length)
 
-  n <- length(y); k <- ncol(X); m <- length(y_)
+  n <- length(y); k <- ncol(X_[[1]]); m <- length(y_)
 
   id_ <- split(1:n, group)
 

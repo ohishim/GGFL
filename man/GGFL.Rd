@@ -96,7 +96,7 @@ each element of \code{coefficients}
 \item{log}{results for all candidates}
 }
 \description{
-\code{GGFL} solving GGFL optimization problem via coordinate descent algorithm (v1.0.1)
+\code{GGFL} solving GGFL optimization problem via coordinate descent algorithm (v1.0.2)
 }
 \examples{
 #GGFL(y, X, group, adj)
