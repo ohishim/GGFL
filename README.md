@@ -19,7 +19,7 @@ https://github.com/ohishim/GGFL
 
 ## Installation
 
-You can install the development version of GGFL like so:
+You can install the current version of GGFL like so:
 
 ``` r
 devtools::install_github("ohishim/GGFL")
@@ -31,14 +31,10 @@ This package has an example dataset as the two objects `exdata` and `adj`.
 The `exdata` has 500 individuals and 22 items of which labels are "y", "X1", ..., "X20", and "group".
 The "y" is a response variable, "X1", ..., "X20" are explanatory variables, and "group" is a variable of spatial information which has 20 areas.  
 
-This example requires the following package:
-```r
-library(GGFL)
-library(dplyr)
-library(magrittr)
-```
 The GGFL procedure can be executed as follows:
 ``` r
+library(GGFL)
+
 y <- exdata$y
 X <- dplyr::select(exdata, X1:X20)
 group <- exdata$group
