@@ -25,7 +25,7 @@
 #'   \item{X18}{explanatory variable 18}
 #'   \item{X19}{explanatory variable 19}
 #'   \item{X20}{explanatory variable 20}
-#'   \item{area}{area label}
+#'   \item{group}{group label}
 #' }
 #' @source none
 "exdata"

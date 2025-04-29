@@ -5,13 +5,15 @@
 \title{Coordinate optimization for GGFL}
 \usage{
 pGGFL(
-  yli,
-  Xli,
-  Zli,
-  D,
+  y,
+  X,
+  Z,
+  group,
+  adj,
   tol = 1e-05,
   Lambda = "default",
   alpha = NULL,
+  standardize = TRUE,
   MPinv = FALSE,
   maxit = 500,
   progress = FALSE,
@@ -20,13 +22,16 @@ pGGFL(
 )
 }
 \arguments{
-\item{yli}{list of group-wise vectors of an objective variable}
+\item{y}{vector of an objective variable}
 
-\item{Xli}{list of group-wise matrixes of explanatory variables which are took GGFL penalty}
+\item{X}{matrix of explanatory variables without intercept for local estimation
+(for GGFL penalty)}
 
-\item{Zli}{list of group-wise matrixes of explanatory variables which are not took GGFL penalty}
+\item{Z}{matrix of explanatory variables without intercept for global estimation}
 
-\item{D}{list of adjacency relations}
+\item{group}{numeric vector of group labels for each individual}
+
+\item{adj}{data.frame or matrix with two columns of adjacent information}
 
 \item{tol}{tolerance for convergence}
 
@@ -36,6 +41,8 @@ if \code{"uniform"}, the candidates are defined by uniformly dividing}
 
 \item{alpha}{a value expressing penalty strength for EGCV criterion;
 default is \code{NULL} which corresponds to \code{log(n)}}
+
+\item{standardize}{if \code{TRUE}, \code{X} is standardized in the sense of norm}
 
 \item{MPinv}{if TRUE, the ordinary least squares estimator is calculated by the Moore-Penrose inverse matrix}
 
@@ -55,52 +62,38 @@ determined based on the coefficients or gradient, respectively;
 }
 \value{
 a list object which has the following elements:
-\item{coef1}{list of GGFL estimates for penalized variables}
+\item{coefficients.local}{a list object for \code{X} which has
+\code{GGFL}: matrix of GGFL estimates; \code{OLS}: matrix of OLS estimates;
+\code{MAX} matrix of estimates when all groups are equal
+}
 
-\item{coef2}{list of GGFL estimates for non-penalized variables}
+\item{coefficients.global}{a list object for \code{Z} which has
+\code{GGFL}: matrix of GGFL estimates; \code{OLS}: matrix of OLS estimates;
+\code{MAX} matrix of estimates when all groups are equal
+}
 
-\item{rss}{vector or scalar of residual sum of squares}
+\item{fitted.values}{a matrix of fitted.values corresponding to
+each element of \code{coefficients}
+}
 
-\item{df}{vector or scalar of degrees of freedom}
+\item{summary}{a data.frame with results of the optimal solution}
 
-\item{msc}{vector or scalar of values of model selection criterion}
+\item{weight}{a list of penalty weight}
 
-\item{r2}{vector or scalar of coefficient of determination}
-
-\item{mer}{vector or scalar of median error rate}
-
-\item{lambda}{vector or scalar of tuning parameters}
-
-\item{weight}{list of penalty weight}
-
-\item{gr.labs}{list of labels for groups}
-
-\item{time}{runtime (s)}
-
-\item{coef1GGFL}{matrix of GGFL estimates for penalized variables}
-
-\item{coef1OLS}{matrix of OLS estimates for penalized variables}
-
-\item{coef1MAX}{matrix of estimates for penalized variables when all groups are equal}
-
-\item{coef2GGFL}{matrix of GGFL estimates for non-penalized variables}
-
-\item{coef2OLS}{matrix of OLS estimates for non-penalized variables}
-
-\item{coef2MAX}{matrix of estimates for non-penalized variables when all groups are equal}
-
-\item{fitGGFL}{vector of fitted values for \code{coef1GGFL} and \code{coef2GGFL}}
-
-\item{fitOLS}{vector of fitted values for \code{coef1OLS} and \code{coef2OLS}}
-
-\item{fitMAX}{vector of fitted values for \code{coef1MAX} and \code{coef2MAX}}
+\item{cluster}{a vector expressing which cluster each group is in}
 
 \item{cwu.control}{\code{cwu.control}}
+
+\item{all.coef}{a list with all candidates of GGFL estimates}
+
+\item{all.cluster}{a matrix of \code{cluster}s for all candidates}
+
+\item{log}{results for all candidates}
 }
 \description{
 \code{pGGFL} More general version of Coordinate optimization for GGFL.
-Only partial explanatory variables are penalized. (v0.2.1)
+Only partial explanatory variables are penalized. (v1.0.0)
 }
 \examples{
-#pGGFL(yli, Xli, Zli, D)
+#pGGFL(y, X, Z, group, adj)
 }

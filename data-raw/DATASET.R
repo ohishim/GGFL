@@ -50,7 +50,7 @@ y <- lapply(1:m, function(j){
 exdata <- data.frame(
   y = y,
   X,
-  area = area
+  group = area
 )[sample(1:n, n),]
 rownames(exdata) <- NULL
 

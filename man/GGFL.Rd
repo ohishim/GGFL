@@ -7,7 +7,7 @@
 GGFL(
   y,
   X,
-  area,
+  group,
   adj,
   Lambda = "default",
   lambda.type = NULL,
@@ -28,10 +28,9 @@ GGFL(
 
 \item{X}{matrix of explanatory variables without intercept}
 
-\item{area}{vector of area labels for each individual}
+\item{group}{numeric vector of group labels for each individual}
 
-\item{adj}{dataframe of adjacent information of which
-the labels for the first and second column are respectively "area" and "adj"}
+\item{adj}{data.frame or matrix with two columns of adjacent information}
 
 \item{Lambda}{candidates of tuning parameter
 if \code{"default"}, the candidates are defined following the paper;
@@ -71,49 +70,32 @@ determined based on the coefficients or gradient, respectively;
 }
 \value{
 a list object which has the following elements:
-\item{idx}{the index of the optimal tuning parameter}
+\item{coefficients}{a list object which has
+\code{GGFL}: matrix of GGFL estimates; \code{OLS}: matrix of OLS estimates;
+\code{MAX} matrix of estimates when all groups are equal
+}
 
-\item{coefGGFL}{matrix of GGFL estimates}
+\item{fitted.values}{a matrix of fitted.values corresponding to
+each element of \code{coefficients}
+}
 
-\item{coefOLS}{matrix of OLS estimates}
+\item{summary}{a data.frame with results of the optimal solution}
 
-\item{coefMAX}{matrix of estimates when all groups are equal}
+\item{weight}{a list of penalty weight}
 
-\item{fitGGFL}{vecter of fitted values for \code{coefGGFL}}
-
-\item{fitOLS}{vecter of fitted values for \code{coefOLS}}
-
-\item{fitMAX}{vecter of fitted values for \code{coefMAX}}
-
-\item{Coef}{list of GGFL estimates}
-
-\item{obje}{objective function}
-
-\item{rss}{residual sum of squares}
-
-\item{df}{degrees of freedom}
-
-\item{msc}{EGCV criterion}
-
-\item{r2}{coefficient of determination}
-
-\item{mer}{median error rate}
-
-\item{iter}{the number of iteration}
-
-\item{lambda}{tuning parameter}
-
-\item{weight}{list of penalty weight}
-
-\item{gr.labs}{list of labels for groups}
-
-\item{time}{runtime (in seconds)}
+\item{cluster}{a vector expressing which cluster each group is in}
 
 \item{cwu.control}{\code{cwu.control}}
+
+\item{all.coef}{a list with all candidates of GGFL estimates}
+
+\item{all.cluster}{a matrix of \code{cluster}s for all candidates}
+
+\item{log}{results for all candidates}
 }
 \description{
-\code{GGFL} solving GGFL optimization problem via coordinate descent algorithm (v0.2.2)
+\code{GGFL} solving GGFL optimization problem via coordinate descent algorithm (v1.0.0)
 }
 \examples{
-#GGFL(y, X, area, adj)
+#GGFL(y, X, group, adj)
 }

@@ -1,5 +1,5 @@
 #' @title Sub-function for GGFL
-#' @description \code{GGFL1} This is required to execute "GGFL" or "pGGFL" (v0.4.0)
+#' @description \code{GGFL1} This is required to execute "GGFL" or "pGGFL" (v0.4.1)
 #'
 #' @importFrom magrittr %>% equals
 #'
@@ -106,7 +106,7 @@ GGFL1 <- function(M, c, Lambda, B, Beta0, tol=1e-5, convC=NULL, maxit=500){
         stop("The error 1 occurs in `GGFL1`")
       }
 
-      return(solve(Q(.Beta)) %*% h(.Beta) %>% drop)
+      return(chol_solve(Q(.Beta), h(.Beta)) %>% drop)
     }
 
     Beta.aft <- Beta0

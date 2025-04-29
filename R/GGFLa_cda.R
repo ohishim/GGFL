@@ -1,20 +1,24 @@
 #' @title Coordinate optimization for GGFL
 #' @description \code{pGGFL} More general version of Coordinate optimization for GGFL.
-#'   Only partial explanatory variables are penalized. (v0.2.1)
+#'   Only partial explanatory variables are penalized. (v1.0.0)
 #'
-#' @importFrom magrittr %>%
+#' @importFrom magrittr %>% add set_rownames
 #' @importFrom MASS ginv
+#' @importFrom purrr transpose
 #'
-#' @param yli list of group-wise vectors of an objective variable
-#' @param Xli list of group-wise matrixes of explanatory variables which are took GGFL penalty
-#' @param Zli list of group-wise matrixes of explanatory variables which are not took GGFL penalty
-#' @param D list of adjacency relations
+#' @param y vector of an objective variable
+#' @param X matrix of explanatory variables without intercept for local estimation
+#'   (for GGFL penalty)
+#' @param Z matrix of explanatory variables without intercept for global estimation
+#' @param group numeric vector of group labels for each individual
+#' @param adj data.frame or matrix with two columns of adjacent information
 #' @param tol tolerance for convergence
 #' @param Lambda candidates of tuning parameter
 #'   if `"default"`, the candidates are defined following the paper;
 #'   if `"uniform"`, the candidates are defined by uniformly dividing
 #' @param alpha a value expressing penalty strength for EGCV criterion;
 #'   default is `NULL` which corresponds to `log(n)`
+#' @param standardize if `TRUE`, `X` is standardized in the sense of norm
 #' @param MPinv if TRUE, the ordinary least squares estimator is calculated by the Moore-Penrose inverse matrix
 #' @param maxit iteration limit
 #' @param progress If `TRUE`, progress is displayed of the form
@@ -28,54 +32,40 @@
 #'   `tol` is a tolerance for convergence of which the default is 1e-5
 #'
 #' @return a list object which has the following elements:
-#' \item{coef1}{list of GGFL estimates for penalized variables}
+#' \item{coefficients.local}{a list object for `X` which has
+#'   `GGFL`: matrix of GGFL estimates; `OLS`: matrix of OLS estimates;
+#'   `MAX` matrix of estimates when all groups are equal
+#' }
 #'
-#' \item{coef2}{list of GGFL estimates for non-penalized variables}
+#' \item{coefficients.global}{a list object for `Z` which has
+#'   `GGFL`: matrix of GGFL estimates; `OLS`: matrix of OLS estimates;
+#'   `MAX` matrix of estimates when all groups are equal
+#' }
 #'
-#' \item{rss}{vector or scalar of residual sum of squares}
+#' \item{fitted.values}{a matrix of fitted.values corresponding to
+#'   each element of `coefficients`
+#' }
 #'
-#' \item{df}{vector or scalar of degrees of freedom}
+#' \item{summary}{a data.frame with results of the optimal solution}
 #'
-#' \item{msc}{vector or scalar of values of model selection criterion}
+#' \item{weight}{a list of penalty weight}
 #'
-#' \item{r2}{vector or scalar of coefficient of determination}
-#'
-#' \item{mer}{vector or scalar of median error rate}
-#'
-#' \item{lambda}{vector or scalar of tuning parameters}
-#'
-#' \item{weight}{list of penalty weight}
-#'
-#' \item{gr.labs}{list of labels for groups}
-#'
-#' \item{time}{runtime (s)}
-#'
-#' \item{coef1GGFL}{matrix of GGFL estimates for penalized variables}
-#'
-#' \item{coef1OLS}{matrix of OLS estimates for penalized variables}
-#'
-#' \item{coef1MAX}{matrix of estimates for penalized variables when all groups are equal}
-#'
-#' \item{coef2GGFL}{matrix of GGFL estimates for non-penalized variables}
-#'
-#' \item{coef2OLS}{matrix of OLS estimates for non-penalized variables}
-#'
-#' \item{coef2MAX}{matrix of estimates for non-penalized variables when all groups are equal}
-#'
-#' \item{fitGGFL}{vector of fitted values for `coef1GGFL` and `coef2GGFL`}
-#'
-#' \item{fitOLS}{vector of fitted values for `coef1OLS` and `coef2OLS`}
-#'
-#' \item{fitMAX}{vector of fitted values for `coef1MAX` and `coef2MAX`}
+#' \item{cluster}{a vector expressing which cluster each group is in}
 #'
 #' \item{cwu.control}{`cwu.control`}
 #'
+#' \item{all.coef}{a list with all candidates of GGFL estimates}
+#'
+#' \item{all.cluster}{a matrix of `cluster`s for all candidates}
+#'
+#' \item{log}{results for all candidates}
+#'
 #' @export
 #' @examples
-#' #pGGFL(yli, Xli, Zli, D)
+#' #pGGFL(y, X, Z, group, adj)
 
 pGGFL <- function(
-  yli, Xli, Zli, D, tol=1e-5, Lambda="default", alpha=NULL,
+  y, X, Z, group, adj, tol=1e-5, Lambda="default", alpha=NULL, standardize=TRUE,
   MPinv=FALSE, maxit=500, progress=FALSE, out.all=FALSE, cwu.control=NULL
 ){
 
@@ -83,28 +73,31 @@ pGGFL <- function(
   ###   preparation
   ##############################################################################
 
+  t1 <- proc.time()[3]
+
   norm2 <- function(x){sqrt(sum(x^2))}
 
-  y <- unlist(yli)
+  if(standardize)
+  {
+    normX <- c(1, colSums(X^2) %>% sqrt)
+    X <- scale(cbind(1, X), center=F, scale=normX) %>% `attr<-`("scaled:scale", NULL)
+    X_ <- as.data.frame(X) %>% split(group) %>% lapply(data.matrix)
+  } else
+  {
+    X_ <- cbind(1, X) %>% as.data.frame %>% split(group) %>% lapply(data.matrix)
+  }
 
-  n <- length(y)
-  k <- Xli[[1]] %>% ncol
-  q <- Zli[[1]] %>% ncol
-  m <- length(yli)
-  r <- sapply(D, length)
+  y_ <- split(y, group)
+  Z_ <- as.data.frame(Z) %>% split(group) %>% lapply(data.matrix)
+  D <- split(adj[,2], adj[,1])
 
-  Z <- do.call(rbind, Zli)
-  Z. <- t(Z)
-  Z.Zinv <- solve(Z. %*% Z)
+  .y <- unlist(y_); .X <- do.call(rbind, X_); .Z <- do.call(rbind, Z_)
 
-  X.li <- lapply(Xli, function(X){t(X)})
-  X.Xli <- lapply(1:m, function(j){X.li[[j]] %*% Xli[[j]]})
-
-  ns <- sapply(yli, length)
-  gr.idx <- mapply(rep, 1:m, ns) %>% unlist
+  n <- length(y); k <- ncol(.X); q <- ncol(Z); m <- length(y_); r <- sapply(D, length)
+  id_ <- split(1:n, group)
 
   if(is.null(alpha)){alpha <- log(n)}
-  s.t <- sum((y-mean(y))^2)/n
+  s.t <- mean((y-mean(y))^2)
 
   if(is.null(cwu.control))
   {
@@ -146,55 +139,64 @@ pGGFL <- function(
     }
   }
 
-  if(progress)
+  fobj <- function(yli, Xli, Zli, D, BETA, Gamma, lambda, W, r){
+    sapply(1:m, function(j){
+      wj <- W[[j]]
+      Dj <- D[[j]]
+      Bj <- BETA[Dj,,drop=F]
+      rj <- r[j]
+      Betaj <- BETA[j,]
+
+      rss <- sum((yli[[j]] - Xli[[j]]%*%BETA[j,] - Zli[[j]]%*%Gamma)^2)
+      pen <- scale(Bj, center=Betaj, scale=F) %>% apply(1, norm2) %>%
+        multiply_by(wj) %>% sum
+
+      return(rss + lambda*pen)
+    }) %>% sum
+  }
+
+  if(MPinv)
   {
-    fobj <- function(yli, Xli, Zli, D, BETA, Gamma, lambda, W, r){
-      sapply(1:m, function(j){
-        wj <- W[[j]]
-        Dj <- D[[j]]
-        Bj <- BETA[Dj,,drop=F]
-        rj <- r[j]
-        Betaj <- BETA[j,]
-
-        rss <- sum((yli[[j]] - Xli[[j]]%*%BETA[j,] - Zli[[j]]%*%Gamma)^2)
-        pen <- scale(Bj, center=Betaj, scale=F) %>% apply(1, norm2) %>%
-          multiply_by(wj) %>% sum
-
-        return(rss + lambda*pen)
-      }) %>% sum
-    }
+    SOLVE <- svd_solve
+  } else
+  {
+    SOLVE <- chol_solve
   }
 
   #=============================================================================
   ###   estimates for lambda.max
   #=============================================================================
 
-  XZ <- cbind(do.call(rbind, Xli), Z); ZX <- t(XZ)
+  .XZ <- cbind(.X, .Z)
 
-  Coef.max <- solve(ZX %*% XZ) %*% ZX %*% y %>% drop
+  Coef.max <- SOLVE(crossprod(.XZ), crossprod(.XZ, .y)) %>% drop
   Beta.max <- Coef.max[1:k]
-  BETA.max <- lapply(1:m, function(j){Beta.max}) %>% do.call(rbind, .)
+  BETA.max <- matrix(Beta.max, m, k, byrow=T)
   Gamma.max <- Coef.max[(k+1):(k+q)]
 
-  rm(XZ, ZX, Coef.max)
+  rm(.XZ); invisible(gc())
 
   #=============================================================================
   ###   LSE
   #=============================================================================
 
-  Z.ZinvZ. <- Z.Zinv %*% Z.
+  GWcomp <- lapply(1:m, function(j){
+    Xj <- X_[[j]]; X.X <- crossprod(Xj); X.y <- crossprod(Xj, y_[[j]])
+    Z.X <- crossprod(Z_[[j]], Xj)
+    Minv <- SOLVE(X.X)
+    return(list(
+      Z.X = Z.X, Beta0 = Minv%*%X.y %>% drop,
+      MinvX.Z = tcrossprod(Minv, Z.X), X.X = X.X, X.y = X.y
+    ))
+  }) %>% purrr::transpose()
+  Z.X_ <- GWcomp$Z.X
+  BETA0 <- GWcomp$Beta0 %>% do.call(rbind, .)
+  X.XinvX.Z_ <- GWcomp$MinvX.Z
+  X.X_ <- GWcomp$X.X; X.y_ <- GWcomp$X.y
+  rm(GWcomp); invisible(gc())
 
-  if(MPinv)
-  {
-    X.XinvX.li <- lapply(1:m, function(j){
-      ginv(X.Xli[[j]]) %*% X.li[[j]]
-    })
-  } else
-  {
-    X.XinvX.li <- lapply(1:m, function(j){
-      solve(X.Xli[[j]], tol=10^(-100)) %*% X.li[[j]]
-    })
-  }
+  .Z.Zinv <- SOLVE(crossprod(.Z))
+  Gamma0 <- .Z.Zinv%*%crossprod(.Z, .y) %>% drop
 
   BETA.aft <- BETA.max
   Gamma.aft <- Gamma.max
@@ -208,12 +210,16 @@ pGGFL <- function(
     BETA.bef <- BETA.aft
     Gamma.bef <- Gamma.aft
 
-    BETA.aft <- lapply(1:m, function(j){
-      X.XinvX.li[[j]] %*% (yli[[j]] - Zli[[j]]%*%Gamma.bef) %>% drop
-    }) %>% do.call(rbind, .)
+    Betacomp <- lapply(1:m, function(j){
+      Betaj <- BETA0[j,] - drop(X.XinvX.Z_[[j]]%*%Gamma.bef)
+      return(list(
+        Beta = Betaj, Z.XBeta = drop(Z.X_[[j]]%*%Betaj)
+      ))
+    }) %>% purrr::transpose()
+    BETA.aft <- Betacomp$Beta %>% do.call(rbind, .)
+    Z.XBeta <- Betacomp$Z.XBeta %>% Reduce(`+`, .)
 
-    XBeta <- lapply(1:m, function(j){Xli[[j]] %*% BETA.aft[j,]}) %>% unlist
-    Gamma.aft <- Z.ZinvZ. %*% (y - XBeta) %>% drop
+    Gamma.aft <- Gamma0 - drop(.Z.Zinv%*%Z.XBeta)
 
     dif <- max(
       max(abs(BETA.aft - BETA.bef) / abs(BETA.bef)),
@@ -223,8 +229,6 @@ pGGFL <- function(
 
   BETA.LSE <- BETA.aft
   Gamma.LSE <- Gamma.aft
-
-  rm(Z.ZinvZ., X.XinvX.li)
 
   #=============================================================================
   ###   penalty weight
@@ -240,26 +244,24 @@ pGGFL <- function(
   ###   lambda
   #=============================================================================
 
-  ytli <- split(y - Z%*%Gamma.max, gr.idx)
-
-  lam.max <- sapply(1:m, function(j){norm2(X.Xli[[j]]%*%Beta.max - X.li[[j]]%*%ytli[[j]]) / sum(W[[j]])}) %>% max
+  lam.max <- sapply(1:m, function(j){
+    norm2(X.X_[[j]]%*%Beta.max - X.y_[[j]] + crossprod(Z.X_[[j]], Gamma.max)) /
+      sum(W[[j]])
+  }) %>% max
 
   if(Lambda == "default")
   {
-    Lambda0 <- rev(lam.max * ((3/4)^((1:100)-1)))
+    lamR <- sqrt(.Machine$double.eps)/lam.max
 
-    lam.check <- sapply(Lambda0, function(lambda){
-      identical(all.equal(lambda, 0), TRUE)
-    })
-    Lambda <- Lambda0[!lam.check]
+    Lambda <- lam.max * exp(
+      seq(0, log(lamR), by = log(lamR)/99)
+    ) %>% rev
   } else if(Lambda == "uniform")
   {
     Lambda <- seq(0, lam.max, length=101)[-1]
   }
 
   lam.n <- length(Lambda)
-
-  rm(ytli)
 
   ##############################################################################
   ###   CDA
@@ -271,9 +273,8 @@ pGGFL <- function(
 
   BETAs <- Gr.labs <- list()
   GAMMAs <- matrix(0, lam.n, q)
-  RSS <- DF <- MSC <- R2 <- MER <- MER <- numeric(lam.n)
+  LOG <- matrix(0, lam.n, 8)
 
-  t1 <- proc.time()[3]
   for(lam.i in 1:lam.n)
   {
     lambda <- Lambda[lam.i]
@@ -290,9 +291,8 @@ pGGFL <- function(
       ###   update beta
       ##########################################################################
 
-      ytli <- (y - Z%*%Gamma.bef) %>% split(., gr.idx)
       X.yt <- lapply(1:m, function(j){
-        X.li[[j]] %*% ytli[[j]] %>% drop
+        X.y_[[j]] - drop(crossprod(Z.X_[[j]], Gamma.bef))
       })
 
       #=========================================================================
@@ -318,7 +318,7 @@ pGGFL <- function(
           labj <- sapply(idxj, function(x){labj[x[1]]})
         }
 
-        resj <- GGFL1(X.Xli[[j]], X.yt[[j]], 2*lambda*wj, Bj, BETA.aft[j,], tol1, convC, maxit)
+        resj <- GGFL1(X.X_[[j]], X.yt[[j]], 2*lambda*wj, Bj, BETA.aft[j,], tol1, convC, maxit)
         BETA.aft[j,] <- resj$solution
 
         if(resj$type == "join")
@@ -393,7 +393,7 @@ pGGFL <- function(
           }
 
           resl <- GGFL1(
-            X.Xli[El] %>% Reduce("+", .),
+            X.X_[El] %>% Reduce("+", .),
             X.yt[El] %>% Reduce("+", .),
             2*lambda*w1,
             Bl, XI[l,], tol1, convC, maxit
@@ -416,10 +416,11 @@ pGGFL <- function(
       ###   update Gamma
       ##########################################################################
 
-      yt <- lapply(1:m, function(j){
-        yli[[j]] - Xli[[j]]%*%BETA.aft[j,]
-      }) %>% unlist
-      Gamma.aft <- Z.Zinv %*% Z. %*% yt %>% drop
+      Z.XBeta <- lapply(1:m, function(j){
+        drop(Z.X_[[j]]%*%BETA.aft[j,])
+      }) %>% Reduce(`+`, .)
+
+      Gamma.aft <- Gamma0 - drop(.Z.Zinv%*%Z.XBeta)
 
       ##########################################################################
       ###   convergence
@@ -432,7 +433,8 @@ pGGFL <- function(
 
       if(progress)
       {
-        print(paste(lam.i, iter, dif, fobj(yli, Xli, Zli, D, BETA.aft, Gamma.aft, lambda, W, r), sep="_"))
+        obj <- fobj(y_, X_, Z_, D, BETA.aft, Gamma.aft, lambda, W, r)
+        print(paste(lam.i, iter, dif, obj, sep="_"))
       }
     } #end while dif
 
@@ -440,64 +442,76 @@ pGGFL <- function(
     GAMMAs[lam.i,] <- Gamma.aft
     Gr.labs[[lam.i]] <- gr.labs
 
-    y.hat <- (lapply(1:m, function(j){Xli[[j]] %*% BETA.aft[j,] %>% drop}) %>% unlist) + Z%*%Gamma.aft
-    RSS[lam.i] <- rss <- sum((y-y.hat)^2) / n
-    DF[lam.i] <- df <- length(unique(gr.labs))*k + q
+    y.hat <- (lapply(1:m, function(j){X_[[j]] %*% BETA.aft[j,] %>% drop}) %>% unlist) + .Z%*%Gamma.aft
+    rss <- mean((.y-y.hat)^2)
+    df <- length(unique(gr.labs))*k + q
 
-    MSC[lam.i] <- rss / ((1 - (df/n))^alpha)
+    if(!progress)
+    {
+      obj <- fobj(y_, X_, Z_, D, BETA.aft, Gamma.aft, lambda, W, r)
+    }
 
-    R2[lam.i] <- 1 - (rss/s.t)
-    MER[lam.i] <- median(abs(y-y.hat)/abs(y))
+    LOG[lam.i,] <- c(
+      lambda, rss, df, rss/((1 - (df/n))^alpha), 1 - (rss/s.t),
+      median(abs(.y-y.hat)/abs(.y)), obj, iter
+    )
 
   } #end for lam.i
   t2 <- proc.time()[3]
 
+  LOG <- as.data.frame(LOG) %>% set_names(c(
+    "lambda", "rss", "df", "MSC", "R2", "MER", "obje", "iter"
+  ))
+
+  opt <- which.min(LOG$MSC)
+  BETA.hat <- BETAs[[opt]]
+  Gamma.hat <- GAMMAs[opt,]
+
+  FIT <- lapply(1:m, function(j){
+    X_[[j]] %*% cbind(BETA.hat[j,], BETA.LSE[j,], Beta.max)
+  }) %>% do.call(rbind, .) %>% add(.Z%*%cbind(Gamma.hat, Gamma.LSE, Gamma.max)) %>%
+    set_colnames(c("GGFL", "OLS", "max")) %>%
+    as.data.frame %>% dplyr::mutate(id = unlist(id_)) %>% dplyr::arrange(id) %>%
+    dplyr::select(-id)
+
+  if(standardize)
+  {
+    BETA.hat <- scale(BETA.hat, center=F, scale=normX) %>%
+      `attr<-`("scaled:scale", NULL)
+    BETA.LSE <- scale(BETA.LSE, center=F, scale=normX) %>%
+      `attr<-`("scaled:scale", NULL)
+    BETA.max <- matrix(Beta.max / normX, m, k, byrow=T)
+  }
+
+  out <- list(
+    coefficients.local = list(
+      GGFL = BETA.hat, OLS = BETA.LSE, MAX = BETA.max
+    ),
+    coefficients.global = list(
+      GGFL = Gamma.hat, OLS = Gamma.LSE, MAX = Gamma.max
+    ),
+    fitted.values = FIT,
+    summary = LOG[opt,] %>% dplyr::mutate(alpha=alpha, time=(t2-t1) %>% set_names(NULL)),
+    weight = W,
+    cluster = Gr.labs[[opt]],
+    cwu.control = cwu.control
+  )
+
   if(out.all)
   {
-    out <- list(
-      coef1 = BETAs,
-      coef2 = GAMMAs,
-      rss = RSS,
-      df = DF,
-      msc = MSC,
-      r2 = R2,
-      mer = MER,
-      lambda = Lambda,
-      weight = W,
-      gr.labs = Gr.labs,
-      time = t2-t1,
-      cwu.control = cwu.control
-    )
-  } else
-  {
-    opt <- which.min(MSC)
-    BETA.hat <- BETAs[[opt]]
-    Gamma.hat <- GAMMAs[opt,]
+    if(standardize)
+    {
+      BETAs <- lapply(BETAs, function(BETA){
+        scale(BETA, center=F, scale=normX) %>%
+          `attr<-`("scaled:scale", NULL)
+      })
+    }
 
-    out <- list(
-      coef1GGFL=BETA.hat,
-      coef1OLS=BETA.LSE,
-      coef1MAX=BETA.max,
-      coef2GGFL=Gamma.hat,
-      coef2OLS=Gamma.LSE,
-      coef2MAX=Gamma.max,
-      fitGGFL = (lapply(1:m, function(j){Xli[[j]] %*% BETA.hat[j,] %>% drop}) %>% unlist) +
-        Z %*% Gamma.hat,
-      fitOLS = (lapply(1:m, function(j){Xli[[j]] %*% BETA.LSE[j,] %>% drop}) %>% unlist) +
-        Z %*% Gamma.LSE,
-      fitMAX = (lapply(1:m, function(j){Xli[[j]] %*% BETA.max[j,] %>% drop}) %>% unlist) +
-        Z %*% Gamma.max,
-      rss = RSS[opt],
-      df = DF[opt],
-      msc = MSC[opt],
-      r2 = R2[opt],
-      mer = MER[opt],
-      lambda = Lambda[opt],
-      weight = W,
-      gr.labs = Gr.labs[[opt]],
-      time = t2-t1,
-      cwu.control = cwu.control
-    )
+    out$all.local.coef = BETAs
+    out$all.global.coef = GAMMAs
+    out$all.cluster = do.call(rbind, Gr.labs) %>%
+      set_colnames(paste0("g", 1:m)) %>% set_rownames(paste0("lam", 1:lam.n))
+    out$log = LOG
   }
 
   return(out)

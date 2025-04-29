@@ -4,8 +4,8 @@
 #'
 #' @format A data frame with 40 rows and 2 variables:
 #' \describe{
-#'   \item{areaNO}{area number}
-#'   \item{adjNO}{adjacent area number}
+#'   \item{group}{group label}
+#'   \item{adjacent}{adjacent group label}
 #' }
 #' @source none
 "adj"
