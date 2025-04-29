@@ -1,5 +1,5 @@
 #' @title Coordinate optimization for GGFL
-#' @description \code{GGFL} solving GGFL optimization problem via coordinate descent algorithm (v1.0.0)
+#' @description \code{GGFL} solving GGFL optimization problem via coordinate descent algorithm (v1.0.1)
 #'
 #' @importFrom dplyr arrange mutate select
 #' @importFrom magrittr %>% multiply_by set_colnames set_names
@@ -49,7 +49,9 @@
 #'
 #' \item{weight}{a list of penalty weight}
 #'
-#' \item{cluster}{a vector expressing which cluster each group is in}
+#' \item{cluster}{a list of cluster}
+#'
+#' \item{cluster.labels}{a vector expressing which cluster each group is in}
 #'
 #' \item{cwu.control}{`cwu.control`}
 #'
@@ -432,14 +434,21 @@ GGFL <- function(
     FIT <- normy*FIT
   }
 
+  cluster <- Gr.labs[[opt]]
+  m. <- max(cluster)
+  rownames(BETA.hat) <- paste0("c", cluster)
+
   out <- list(
     coefficients = list(
       GGFL = BETA.hat, OLS = BETA.LSE, MAX = BETA.max
     ),
     fitted.values = FIT,
-    summary = LOG[opt,] %>% dplyr::mutate(alpha=alpha, time=(t2-t1) %>% set_names(NULL)),
+    summary = LOG[opt,] %>% dplyr::mutate(
+      cluster = m., alpha = alpha, time = (t2-t1) %>% set_names(NULL)
+    ),
     weight = W,
-    cluster = Gr.labs[[opt]],
+    cluster = split(1:m, cluster) %>% set_names(paste0("c", 1:m.)),
+    cluster.labels = cluster %>% set_names(paste0("g", 1:m)),
     cwu.control = cwu.control
   )
 

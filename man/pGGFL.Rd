@@ -80,7 +80,9 @@ each element of \code{coefficients}
 
 \item{weight}{a list of penalty weight}
 
-\item{cluster}{a vector expressing which cluster each group is in}
+\item{cluster}{a list of cluster}
+
+\item{cluster.labels}{a vector expressing which cluster each group is in}
 
 \item{cwu.control}{\code{cwu.control}}
 
@@ -92,7 +94,7 @@ each element of \code{coefficients}
 }
 \description{
 \code{pGGFL} More general version of Coordinate optimization for GGFL.
-Only partial explanatory variables are penalized. (v1.0.0)
+Only partial explanatory variables are penalized. (v1.0.1)
 }
 \examples{
 #pGGFL(y, X, Z, group, adj)

@@ -1,7 +1,7 @@
 Package: GGFL
 Type: Package
 Title: Coordinate optimization for GGFL
-Version: 1.0.0
+Version: 1.0.1
 Author: Mineaki Ohishi
 Maintainer: Mineaki Ohishi <mineaki.ohishi.a4@tohoku.ac.jp>
 Description: More about what it does (maybe more than one line)

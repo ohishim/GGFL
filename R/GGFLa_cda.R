@@ -1,6 +1,6 @@
 #' @title Coordinate optimization for GGFL
 #' @description \code{pGGFL} More general version of Coordinate optimization for GGFL.
-#'   Only partial explanatory variables are penalized. (v1.0.0)
+#'   Only partial explanatory variables are penalized. (v1.0.1)
 #'
 #' @importFrom magrittr %>% add set_rownames
 #' @importFrom MASS ginv
@@ -50,7 +50,9 @@
 #'
 #' \item{weight}{a list of penalty weight}
 #'
-#' \item{cluster}{a vector expressing which cluster each group is in}
+#' \item{cluster}{a list of cluster}
+#'
+#' \item{cluster.labels}{a vector expressing which cluster each group is in}
 #'
 #' \item{cwu.control}{`cwu.control`}
 #'
@@ -440,7 +442,7 @@ pGGFL <- function(
 
     BETAs[[lam.i]] <- BETA.aft
     GAMMAs[lam.i,] <- Gamma.aft
-    Gr.labs[[lam.i]] <- gr.labs
+    Gr.labs[[lam.i]] <- match(gr.labs, unique(gr.labs))
 
     y.hat <- (lapply(1:m, function(j){X_[[j]] %*% BETA.aft[j,] %>% drop}) %>% unlist) + .Z%*%Gamma.aft
     rss <- mean((.y-y.hat)^2)
@@ -483,6 +485,10 @@ pGGFL <- function(
     BETA.max <- matrix(Beta.max / normX, m, k, byrow=T)
   }
 
+  cluster <- Gr.labs[[opt]]
+  m. <- max(cluster)
+  rownames(BETA.hat) <- paste0("c", cluster)
+
   out <- list(
     coefficients.local = list(
       GGFL = BETA.hat, OLS = BETA.LSE, MAX = BETA.max
@@ -491,9 +497,12 @@ pGGFL <- function(
       GGFL = Gamma.hat, OLS = Gamma.LSE, MAX = Gamma.max
     ),
     fitted.values = FIT,
-    summary = LOG[opt,] %>% dplyr::mutate(alpha=alpha, time=(t2-t1) %>% set_names(NULL)),
+    summary = LOG[opt,] %>% dplyr::mutate(
+      cluster = m., alpha = alpha, time = (t2-t1) %>% set_names(NULL)
+    ),
     weight = W,
-    cluster = Gr.labs[[opt]],
+    cluster = split(1:m, cluster) %>% set_names(paste0("c", 1:m.)),
+    cluster.labels = cluster,
     cwu.control = cwu.control
   )
 

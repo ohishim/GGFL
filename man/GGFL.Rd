@@ -83,7 +83,9 @@ each element of \code{coefficients}
 
 \item{weight}{a list of penalty weight}
 
-\item{cluster}{a vector expressing which cluster each group is in}
+\item{cluster}{a list of cluster}
+
+\item{cluster.labels}{a vector expressing which cluster each group is in}
 
 \item{cwu.control}{\code{cwu.control}}
 
@@ -94,7 +96,7 @@ each element of \code{coefficients}
 \item{log}{results for all candidates}
 }
 \description{
-\code{GGFL} solving GGFL optimization problem via coordinate descent algorithm (v1.0.0)
+\code{GGFL} solving GGFL optimization problem via coordinate descent algorithm (v1.0.1)
 }
 \examples{
 #GGFL(y, X, group, adj)
